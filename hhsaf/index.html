@@ -1,0 +1,1644 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HHSAF 手指衛生自己評価</title>
+<meta name="description" content="WHO手指衛生自己評価フレームワーク（HHSAF 2010）で施設を評価し、構成要素別のレーダーチャート、得点に応じた推奨事項、効果が高く実施しやすい順の改善アクションを表示するWebアプリ。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Barlow+Condensed:wght@500;600&display=swap">
+<style>
+:root{
+  --bg:#F2F5F4;
+  --surface:#FFFFFF;
+  --surface-2:#E8EFED;
+  --ink:#13211F;
+  --ink-2:#44554F;
+  --ink-3:#687A75;
+  --line:#D3DDDA;
+  --line-strong:#AEBFBA;
+  --accent:#0B6B60;
+  --accent-strong:#07463F;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#DCEEE9;
+  --series-1:#2a78d6;
+  --series-1-fill:rgba(42,120,214,.15);
+  --series-2:#eb6834;
+  --good:#0ca30c;
+  --warning:#fab219;
+  --serious:#ec835a;
+  --critical:#d03b3b;
+  --shadow:0 1px 2px rgba(15,40,35,.06),0 6px 18px rgba(15,40,35,.06);
+  --font-ui:"BIZ UDPGothic","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Yu Gothic","Meiryo","Noto Sans JP","Noto Sans CJK JP","IPAPGothic",system-ui,sans-serif;
+  --font-num:"Barlow Condensed","BIZ UDPGothic","Arial Narrow",system-ui,sans-serif;
+  --radius:10px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1413;
+    --surface:#141E1C;
+    --surface-2:#1B2826;
+    --ink:#E3EBE9;
+    --ink-2:#A8B8B4;
+    --ink-3:#83958F;
+    --line:#26342F;
+    --line-strong:#3B4C47;
+    --accent:#48BCA9;
+    --accent-strong:#79D3C4;
+    --accent-ink:#04201C;
+    --accent-soft:#143530;
+    --series-1:#3987e5;
+    --series-1-fill:rgba(57,135,229,.22);
+    --series-2:#d95926;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1413;
+  --surface:#141E1C;
+  --surface-2:#1B2826;
+  --ink:#E3EBE9;
+  --ink-2:#A8B8B4;
+  --ink-3:#83958F;
+  --line:#26342F;
+  --line-strong:#3B4C47;
+  --accent:#48BCA9;
+  --accent-strong:#79D3C4;
+  --accent-ink:#04201C;
+  --accent-soft:#143530;
+  --series-1:#3987e5;
+  --series-1-fill:rgba(57,135,229,.22);
+  --series-2:#d95926;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:15px;line-height:1.7;font-feature-settings:"palt" 0}
+a{color:var(--accent)}
+a:hover{color:var(--accent-strong)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+button,select,input{font:inherit;color:inherit}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.35;margin:0}
+p{margin:0}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- app bar ---------- */
+.appbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.appbar-in{max-width:1240px;margin:0 auto;padding-inline:clamp(16px,3vw,32px);padding-block:10px;display:flex;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand-mark{font-family:var(--font-num);font-weight:600;font-size:15px;letter-spacing:.08em;color:var(--accent-ink);background:var(--accent);padding:2px 8px;border-radius:5px}
+.brand-name{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.live{margin-left:auto;display:flex;align-items:center;gap:10px}
+.live-score{font-size:22px;font-weight:600;line-height:1}
+.live-score small{font-size:13px;color:var(--ink-3);font-weight:500;margin-left:2px}
+
+/* ---------- layout ---------- */
+.wrap{max-width:1240px;margin:0 auto;padding-inline:clamp(16px,3vw,32px);padding-block:24px 64px;display:grid;gap:28px}
+.intro{display:grid;gap:14px}
+.intro h1{font-size:clamp(22px,3.2vw,30px);font-weight:700;letter-spacing:.01em}
+.intro .lead{color:var(--ink-2);max-width:72ch}
+.steps{display:flex;flex-wrap:wrap;gap:8px 18px;padding:0;margin:0;list-style:none;color:var(--ink-2);font-size:13.5px}
+.steps li{display:flex;gap:6px;align-items:baseline}
+.steps b{font-family:var(--font-num);font-size:15px;color:var(--accent)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px 16px;padding:14px 16px}
+.field{display:grid;gap:4px}
+.field label{font-size:12.5px;color:var(--ink-3);letter-spacing:.04em}
+.field input{width:100%;padding:8px 10px;border:1px solid var(--line-strong);border-radius:7px;background:var(--surface);min-height:38px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-top:1px solid var(--line);align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:6px 12px;border-radius:7px;border:1px solid var(--line-strong);background:var(--surface);cursor:pointer;font-size:13.5px;line-height:1.2;text-decoration:none;color:var(--ink)}
+.btn:hover{border-color:var(--accent);color:var(--ink)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn-primary:hover{background:var(--accent-strong);border-color:var(--accent-strong);color:var(--accent-ink)}
+.btn[data-armed="1"]{border-color:var(--critical);color:var(--critical)}
+.toolbar .sep{flex:1 1 auto}
+.file-btn input{position:absolute;width:1px;height:1px;opacity:0}
+.file-btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.toast{font-size:13px;color:var(--accent);min-height:1.2em;padding:0 16px 10px}
+.toast:empty{display:none}
+.banner{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--accent-soft);border-radius:var(--radius) var(--radius) 0 0;font-size:13.5px}
+.banner b{color:var(--accent-strong)}
+.history{border-top:1px solid var(--line);padding:10px 16px}
+.history summary{cursor:pointer;font-size:13.5px;color:var(--ink-2)}
+.hist-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:6px}
+.hist-list li{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13.5px;padding:6px 0;border-bottom:1px dashed var(--line)}
+.hist-list li:last-child{border-bottom:0}
+.hist-list .grow{flex:1 1 220px;min-width:0}
+.hist-empty{font-size:13px;color:var(--ink-3);margin-top:6px}
+
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:22px;align-items:start}
+@media (max-width:1020px){.workspace{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- tabs ---------- */
+.tabs-wrap{overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+.tabs{display:flex;gap:2px;padding:8px 8px 0;min-width:max-content}
+.tab{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:7px;align-items:center;text-align:left;border:1px solid transparent;border-bottom:0;background:transparent;border-radius:8px 8px 0 0;padding:8px 9px 9px;cursor:pointer;color:var(--ink-2)}
+.tab:hover{background:var(--surface-2)}
+.tab[aria-selected="true"]{background:var(--surface);border-color:var(--line);color:var(--ink);position:relative;top:1px}
+.tab-no{grid-row:1/3;font-family:var(--font-num);font-size:22px;font-weight:600;color:var(--accent);line-height:1}
+.tab-name{font-size:12.5px;font-weight:700;white-space:nowrap}
+.tab-score{font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+.tab-meter{display:inline-block;width:44px;height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden}
+.tab-meter i{display:block;height:100%;background:var(--series-1);width:0}
+
+.form{overflow:hidden}
+.tabpanel{padding:18px clamp(14px,2.4vw,24px) 24px}
+.panel-head{display:grid;gap:6px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.panel-head h2{font-size:19px}
+.panel-head h2 .en{font-size:13px;color:var(--ink-3);font-weight:400;margin-left:8px;letter-spacing:.02em}
+.panel-head p{color:var(--ink-2);font-size:14px}
+.q-group{display:flex;gap:10px;align-items:baseline;padding:16px 0 2px;color:var(--ink-2);font-size:14px;font-weight:700}
+.q{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.q:last-child{border-bottom:0}
+.q-sub{padding-left:clamp(0px,2vw,18px)}
+.q-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:baseline}
+.q-id{font-family:var(--font-num);font-weight:600;font-size:15px;color:var(--accent);min-width:3.2em}
+.q-text{font-size:14.5px}
+.q-pts{font-family:var(--font-num);font-size:15px;color:var(--ink-3);white-space:nowrap}
+.q-pts b{color:var(--ink);font-weight:600}
+.q-note{font-size:13px;color:var(--ink-2);margin-left:calc(3.2em + 10px)}
+.q-note summary{cursor:pointer;color:var(--ink-3);font-size:12.5px}
+.q-note p{margin-top:4px;max-width:70ch}
+.q-cond{margin-left:calc(3.2em + 10px);font-size:12.5px;color:var(--ink-3);background:var(--surface-2);padding:6px 10px;border-radius:6px}
+.q-gate{background:var(--surface-2);border-radius:8px;padding:12px;border-bottom:0;margin:8px 0}
+.q-gate .q-id{font-family:var(--font-ui);font-size:12px;letter-spacing:.06em}
+.opts{margin-left:calc(3.2em + 10px);display:grid;gap:6px}
+.opts-yn{grid-template-columns:repeat(2,minmax(0,160px))}
+.opt{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;cursor:pointer;background:var(--surface);min-height:38px;font-size:14px}
+.opt:hover{border-color:var(--line-strong)}
+.opt input{accent-color:var(--accent);margin:0;flex:0 0 auto;width:16px;height:16px}
+.opt-label{flex:1 1 auto}
+.opt-pts{font-family:var(--font-num);font-size:14px;color:var(--ink-3);white-space:nowrap}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opt:has(input:checked) .opt-pts{color:var(--accent-strong);font-weight:600}
+.q.is-off .opts,.q.is-off .q-text{opacity:.45}
+.q.is-off .opt{cursor:not-allowed}
+@media (max-width:560px){
+  .q-note,.q-cond,.opts{margin-left:0}
+  .opts-yn{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.lead-note{background:var(--surface-2);border-radius:8px;padding:10px 12px;font-size:13.5px;color:var(--ink-2);margin-top:12px}
+.lead-group{padding-top:14px}
+.lead-group h3{font-size:14px;color:var(--ink-2);margin-bottom:6px}
+.lead-item{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:7px;margin-top:6px;cursor:pointer;font-size:14px}
+.lead-item input{accent-color:var(--accent);margin-top:5px;flex:0 0 auto;width:16px;height:16px}
+.lead-item:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+
+/* ---------- results aside ---------- */
+.results{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px);display:grid;gap:0;max-height:calc(100vh - 80px);overflow:auto}
+@media (max-width:1020px){.results{position:static;max-height:none}}
+.res-sec{padding:16px 18px;border-bottom:1px solid var(--line)}
+.res-sec:last-child{border-bottom:0}
+.eyebrow{font-size:12px;color:var(--ink-3);letter-spacing:.08em}
+.score{display:flex;align-items:baseline;gap:6px;margin-top:2px}
+.score .big{font-family:var(--font-num);font-size:54px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.score .den{font-family:var(--font-num);font-size:18px;color:var(--ink-3)}
+.lvl-line{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.lvl{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:2px 9px 2px 7px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);white-space:nowrap;line-height:1.5}
+.lvl i{width:9px;height:9px;border-radius:2px;display:inline-block;flex:0 0 auto}
+.lvl-0 i{background:var(--critical)}
+.lvl-1 i{background:var(--serious)}
+.lvl-2 i{background:var(--warning)}
+.lvl-3 i{background:var(--good)}
+.lvl-en{font-size:12.5px;color:var(--ink-3)}
+.lvl-desc{font-size:13.5px;color:var(--ink-2);margin-top:6px}
+.levelbar{position:relative;margin-top:14px;padding-bottom:18px}
+.levelbar-track{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;height:8px}
+.levelbar-track span{border-radius:2px;opacity:.55}
+.levelbar-track span:nth-child(1){background:var(--critical)}
+.levelbar-track span:nth-child(2){background:var(--serious)}
+.levelbar-track span:nth-child(3){background:var(--warning)}
+.levelbar-track span:nth-child(4){background:var(--good)}
+.levelbar-mark{position:absolute;top:-4px;width:2px;height:16px;background:var(--ink);transform:translateX(-1px);border-radius:1px}
+.levelbar-ticks{position:absolute;left:0;right:0;top:12px;font-family:var(--font-num);font-size:12px;color:var(--ink-3)}
+.levelbar-ticks span{position:absolute;transform:translateX(-50%)}
+.levelbar-ticks span:first-child{transform:none}
+.levelbar-ticks span:last-child{transform:translateX(-100%)}
+.progress-line{font-size:12.5px;color:var(--ink-3);margin-top:4px}
+.lead-status{font-size:13px;color:var(--ink-2);margin-top:8px}
+
+.radar-head{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.radar-head h2{font-size:15px}
+.cmp{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--ink-3)}
+.cmp select{max-width:220px;padding:4px 6px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface);font-size:12.5px}
+.radar-wrap{position:relative;margin-top:6px}
+.radar-wrap svg{display:block;width:100%;height:auto;overflow:visible}
+.rd-ring{fill:none;stroke:var(--line);stroke-width:1}
+.rd-ring-outer{stroke:var(--line-strong)}
+.rd-spoke{stroke:var(--line);stroke-width:1}
+.rd-tick{fill:var(--ink-3);font-family:var(--font-num);font-size:11px}
+.rd-cur{fill:var(--series-1-fill);stroke:var(--series-1);stroke-width:2;stroke-linejoin:round}
+.rd-cmp{fill:none;stroke:var(--series-2);stroke-width:2;stroke-dasharray:6 4;stroke-linejoin:round}
+.rd-dot{fill:var(--series-1);stroke:var(--surface);stroke-width:2}
+.rd-dot-cmp{fill:var(--surface);stroke:var(--series-2);stroke-width:2}
+.rd-hit{fill:transparent;cursor:pointer}
+.rd-hit:focus{outline:none}
+.rd-hit:focus-visible{stroke:var(--accent);stroke-width:2}
+.rd-label{fill:var(--ink-2);font-family:var(--font-ui);font-size:12.5px}
+.rd-val{fill:var(--ink);font-family:var(--font-num);font-size:16px;font-weight:600}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.5;padding:6px 9px;border-radius:6px;white-space:nowrap;transform:translate(-50%,calc(-100% - 12px));z-index:3}
+.tip b{font-family:var(--font-num);font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-2);margin-top:4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:18px;height:0;border-top:2px solid var(--series-1);display:inline-block}
+.sw-cmp{border-top:2px dashed var(--series-2)}
+
+.ctable{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:10px}
+.ctable th{font-weight:400;color:var(--ink-3);font-size:12px;text-align:left;padding:4px 4px;border-bottom:1px solid var(--line)}
+.ctable td{padding:7px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+.ctable tr:last-child td{border-bottom:0}
+.ctable .c-name{white-space:nowrap}
+.ctable .c-name b{font-family:var(--font-num);color:var(--accent);margin-right:6px;font-size:14px}
+.ctable .c-score{text-align:right;font-family:var(--font-num);font-size:16px;font-weight:600;white-space:nowrap}
+.ctable .c-delta{text-align:right;font-family:var(--font-num);font-size:13px;color:var(--ink-3);white-space:nowrap}
+.cbar{position:relative;height:6px;background:var(--surface-2);border-radius:3px;min-width:60px}
+.cbar i{position:absolute;left:0;top:0;bottom:0;background:var(--series-1);border-radius:3px}
+.cbar em{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--line-strong)}
+.bench{font-size:12.5px;color:var(--ink-3);margin-top:10px}
+
+/* ---------- sections ---------- */
+.sec{display:grid;gap:16px}
+.sec-head{display:grid;gap:6px}
+.sec-head h2{font-size:clamp(19px,2.4vw,23px)}
+.sec-head p{color:var(--ink-2);max-width:78ch;font-size:14.5px}
+.rubric{font-size:13.5px}
+.rubric summary{cursor:pointer;color:var(--accent);font-size:13.5px}
+.rubric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:10px}
+.rubric-grid table{width:100%;border-collapse:collapse}
+.rubric-grid caption{text-align:left;font-weight:700;padding-bottom:4px}
+.rubric-grid td{padding:5px 6px;border-top:1px solid var(--line);vertical-align:top}
+.rubric-grid td:first-child{font-family:var(--font-num);font-weight:600;width:2em;color:var(--accent)}
+
+.prio-controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:13.5px}
+.prio-controls label{display:flex;align-items:center;gap:6px;color:var(--ink-2)}
+.prio-controls select{padding:5px 8px;border:1px solid var(--line-strong);border-radius:6px;background:var(--surface)}
+.prio-controls input{accent-color:var(--accent)}
+.tier-sum{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13.5px;color:var(--ink-2)}
+.tier-sum b{font-family:var(--font-num);font-size:17px;color:var(--ink);margin-left:2px}
+
+.prio-grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.prio-grid{grid-template-columns:minmax(0,1fr)}}
+.matrix-box{padding:14px}
+.matrix-box h3{font-size:14px;margin-bottom:10px}
+.matrix{display:grid;grid-template-columns:22px repeat(5,minmax(0,1fr));gap:3px;font-size:12px}
+.mx-cell{min-height:50px;border-radius:5px;background:var(--surface-2);padding:4px;display:flex;flex-wrap:wrap;gap:3px;align-content:flex-start}
+.mx-cell.qw{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.mx-ax{display:flex;align-items:center;justify-content:center;font-family:var(--font-num);color:var(--ink-3);font-size:13px}
+.mx-foot{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-3);margin:4px 0 0 25px}
+.mx-yl{font-size:11.5px;color:var(--ink-3);margin-bottom:4px}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 5px;border-radius:11px;font-family:var(--font-num);font-size:13px;font-weight:600;text-decoration:none;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink)}
+.chip.t-qw{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.t-major{border-color:var(--accent);color:var(--accent)}
+.chip.t-later{color:var(--ink-3);border-style:dashed}
+.chip:hover{filter:brightness(1.08)}
+.mx-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12px;color:var(--ink-2);margin-top:10px}
+.mx-legend span{display:inline-flex;align-items:center;gap:5px}
+
+.acts{display:grid;gap:10px}
+.act{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;padding:14px 16px;scroll-margin-top:90px}
+.act.flash{box-shadow:0 0 0 2px var(--accent)}
+.act-rank{font-family:var(--font-num);font-size:28px;font-weight:600;line-height:1;color:var(--ink-3);text-align:right;padding-top:2px}
+.act.t-qw .act-rank{color:var(--accent)}
+.act-body{display:grid;gap:6px;min-width:0}
+.act-top{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12.5px;color:var(--ink-3)}
+.tier{font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid var(--line-strong);color:var(--ink-2);white-space:nowrap}
+.tier.t-qw{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tier.t-major{border-color:var(--accent);color:var(--accent)}
+.tier.t-later{border-style:dashed}
+.tag-un{font-size:12px;padding:0 6px;border-radius:4px;background:var(--surface-2);color:var(--ink-2)}
+.act-title{font-size:15.5px;font-weight:700}
+.act-step{font-size:13.5px;color:var(--ink-2)}
+.metrics{display:flex;flex-wrap:wrap;gap:6px 20px;margin:0;font-size:12.5px;color:var(--ink-3)}
+.metrics div{display:flex;align-items:center;gap:6px}
+.metrics dd{margin:0;color:var(--ink)}
+.metrics .num{font-size:16px;font-weight:600}
+.pips{display:inline-flex;gap:2px}
+.pips i{width:9px;height:9px;border-radius:2px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line-strong)}
+.pips i.on{background:var(--accent);box-shadow:none}
+.act-why summary{cursor:pointer;font-size:13px;color:var(--accent)}
+.act-why .why{font-size:13.5px;color:var(--ink-2);margin-top:6px;max-width:80ch}
+.act-why .how{font-size:13.5px;margin-top:6px;max-width:80ch;padding-left:10px;border-left:2px solid var(--line-strong)}
+.cite{text-decoration:none;font-family:var(--font-num);font-size:.95em;white-space:nowrap}
+.empty{padding:20px;color:var(--ink-2);text-align:center}
+
+.rec-level{padding:18px 20px;display:grid;gap:10px;border-top:4px solid var(--lvlc,var(--line-strong))}
+.rec-level h3{font-size:17px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.rec-level ol{margin:0;padding-left:1.4em;display:grid;gap:6px;font-size:14px;max-width:86ch}
+.rec-level .note{font-size:13px;color:var(--ink-2);max-width:86ch}
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}
+.rec-card{padding:16px 18px;display:grid;gap:10px;align-content:start}
+.rec-card header{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:baseline}
+.rec-card h3{font-size:15.5px}
+.rec-card h3 b{font-family:var(--font-num);color:var(--accent);margin-right:6px}
+.rec-card .sc{font-family:var(--font-num);font-size:18px;font-weight:600;margin-left:auto}
+.rec-card .sc small{font-size:13px;color:var(--ink-3);font-weight:500}
+.rec-card ul{margin:0;padding-left:1.2em;display:grid;gap:6px;font-size:13.5px}
+.gaps-title{font-size:12px;color:var(--ink-3);letter-spacing:.04em;margin-top:2px}
+.rec-card ul.gaps{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:5px}
+.gaps li{font-size:12px;padding:2px 7px;border-radius:5px;background:var(--surface-2);color:var(--ink-2)}
+.gaps li b{font-family:var(--font-num);color:var(--ink);margin-right:3px}
+.rec-extra{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px}
+.rec-extra .panel{padding:16px 18px;display:grid;gap:8px;align-content:start}
+.rec-extra h3{font-size:15px}
+.rec-extra p,.rec-extra li{font-size:13.5px;color:var(--ink-2)}
+.rec-extra ul{margin:0;padding-left:1.2em;display:grid;gap:4px}
+
+.refs-note{font-size:13.5px;color:var(--ink-2)}
+.refs{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:ref}
+.refs li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;font-size:13.5px;scroll-margin-top:90px}
+.refs li:target{background:var(--accent-soft);border-radius:6px}
+.refs .rn{font-family:var(--font-num);font-weight:600;color:var(--accent);text-align:right;font-size:15px}
+.refs .rt{overflow-wrap:anywhere}
+.refs .rd{display:block;font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.foot{font-size:12.5px;color:var(--ink-3);border-top:1px solid var(--line);padding-top:16px;display:grid;gap:6px;max-width:100ch}
+
+@media (max-width:640px){
+  body{font-size:14.5px}
+  .live-score{font-size:19px}
+  .brand-name{font-size:13.5px}
+  .score .big{font-size:46px}
+  .act{grid-template-columns:30px minmax(0,1fr);padding:12px}
+  .act-rank{font-size:22px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .act{transition:box-shadow .3s}
+  .tab-meter i,.cbar i{transition:width .25s}
+}
+@media print{
+  .appbar,.toolbar,.tabs-wrap,.form,.history,.prio-controls,.banner .btn,.no-print{display:none !important}
+  body{background:#fff;color:#000}
+  .workspace{grid-template-columns:1fr}
+  .results{position:static;max-height:none;overflow:visible}
+  .panel{break-inside:avoid;border-color:#bbb}
+  details{display:block}
+  details>*{display:block}
+  .act{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-in">
+    <div class="brand"><span class="brand-mark">HHSAF</span><span class="brand-name">手指衛生自己評価 2010</span></div>
+    <div class="live" aria-live="polite">
+      <span class="live-score num" id="liveScore">0<small>/500</small></span>
+      <span id="liveLevel"></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="intro" aria-labelledby="h-title">
+    <h1 id="h-title">WHO 手指衛生自己評価フレームワーク（HHSAF 2010）</h1>
+    <p class="lead">5つの構成要素・27指標（各100点、計500点）で自施設の手指衛生の取り組みを評価します。回答するとその場で構成要素別の得点をレーダーチャートに表示し、得点に応じたガイドライン上の推奨事項と、効果が高く実施しやすい順に並べた改善アクションを提示します。</p>
+    <ol class="steps">
+      <li><b>1</b>構成要素ごとのタブで設問に回答</li>
+      <li><b>2</b>右側で総合レベルとレーダーチャートを確認</li>
+      <li><b>3</b>下の優先順位と推奨事項を行動計画に反映</li>
+      <li><b>4</b>「この評価を記録」で保存し、次回と比較</li>
+    </ol>
+    <div class="panel">
+      <div class="banner" id="sampleBanner" hidden>
+        <span><b>サンプル回答</b>（架空の400床急性期病院）を表示しています。自施設の評価は「白紙から始める」を押してください。</span>
+      </div>
+      <div class="meta">
+        <div class="field"><label for="fFacility">施設名</label><input id="fFacility" type="text" autocomplete="organization" placeholder="例：○○病院"></div>
+        <div class="field"><label for="fDate">評価日</label><input id="fDate" type="date"></div>
+        <div class="field"><label for="fAssessor">評価者・部署</label><input id="fAssessor" type="text" placeholder="例：感染対策室"></div>
+      </div>
+      <div class="toolbar">
+        <button class="btn" type="button" id="btnNew">白紙から始める</button>
+        <button class="btn" type="button" id="btnSample">サンプルを表示</button>
+        <button class="btn btn-primary" type="button" id="btnRecord">この評価を記録</button>
+        <span class="sep"></span>
+        <button class="btn" type="button" id="btnCopy">結果をテキストでコピー</button>
+        <button class="btn" type="button" id="btnExport">JSONで保存</button>
+        <label class="btn file-btn" for="fileImport">JSONを読み込む<input type="file" id="fileImport" accept="application/json,.json"></label>
+        <button class="btn" type="button" id="btnPrint">印刷・PDF</button>
+      </div>
+      <p class="toast" id="toast" role="status" aria-live="polite"></p>
+      <details class="history" id="historyBox">
+        <summary id="historySummary">記録した評価</summary>
+        <ul class="hist-list" id="histList"></ul>
+      </details>
+    </div>
+  </section>
+
+  <div class="workspace">
+    <section class="panel form" aria-label="評価票">
+      <div class="tabs-wrap"><div class="tabs" role="tablist" id="tabs" aria-label="構成要素"></div></div>
+      <div id="panels"></div>
+    </section>
+
+    <aside class="panel results" aria-label="評価結果">
+      <div class="res-sec">
+        <p class="eyebrow">総合スコア</p>
+        <p class="score"><span class="big" id="rTotal">0</span><span class="den">/ 500</span></p>
+        <div class="lvl-line" id="rLevel"></div>
+        <p class="lvl-desc" id="rLevelDesc"></p>
+        <div class="levelbar" aria-hidden="true">
+          <div class="levelbar-track"><span></span><span></span><span></span><span></span></div>
+          <div class="levelbar-mark" id="rMark"></div>
+          <div class="levelbar-ticks"><span style="left:0">0</span><span style="left:25%">125</span><span style="left:50%">250</span><span style="left:75%">375</span><span style="left:100%">500</span></div>
+        </div>
+        <p class="progress-line" id="rProgress"></p>
+        <p class="lead-status" id="rLead"></p>
+      </div>
+      <div class="res-sec">
+        <div class="radar-head">
+          <h2>構成要素別スコア</h2>
+          <label class="cmp" for="cmpSel">比較<select id="cmpSel"></select></label>
+        </div>
+        <div class="radar-wrap" id="radarWrap"></div>
+        <div class="legend" id="legend"></div>
+        <table class="ctable" id="ctable">
+          <caption class="sr-only">構成要素別スコア一覧</caption>
+          <thead><tr><th scope="col">構成要素</th><th scope="col" style="width:32%">0〜100</th><th scope="col" style="text-align:right">得点</th><th scope="col" style="text-align:right" id="ctDeltaHead">比較</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="bench" id="bench"></p>
+      </div>
+    </aside>
+  </div>
+
+  <section class="sec" id="priority" aria-labelledby="h-prio">
+    <div class="sec-head">
+      <h2 id="h-prio">改善アクションの優先順位</h2>
+      <p>未達の設問を改善アクションにまとめ、<b>期待される効果</b>（1〜5）と<b>実施の容易さ</b>（1〜5）を掛け合わせた優先度の高い順に並べています。効果は引用文献のエビデンスの強さと大きさ、容易さは費用・期間・必要な決裁から評価しました。施設の事情に合わせて読み替えてください。</p>
+      <details class="rubric">
+        <summary>評価尺度の定義と優先区分</summary>
+        <div class="rubric-grid" id="rubric"></div>
+      </details>
+    </div>
+    <div class="prio-controls no-print">
+      <label for="sortSel">並べ替え<select id="sortSel">
+        <option value="priority">優先度（効果×容易さ）</option>
+        <option value="gain">HHSAF得点の伸び</option>
+        <option value="comp">構成要素の順</option>
+      </select></label>
+      <label for="compSel">構成要素<select id="compSel"><option value="all">すべて</option></select></label>
+      <label for="inclUn"><input type="checkbox" id="inclUn" checked>未回答の設問も含める</label>
+    </div>
+    <div class="tier-sum" id="tierSum"></div>
+    <div class="prio-grid">
+      <div class="panel matrix-box">
+        <h3>優先度マトリクス</h3>
+        <p class="mx-yl">↑ 期待される効果</p>
+        <div class="matrix" id="matrix"></div>
+        <div class="mx-foot"><span>難しい</span><span>実施の容易さ →</span><span>容易</span></div>
+        <div class="mx-legend">
+          <span><span class="chip t-qw">1</span>最優先</span>
+          <span><span class="chip t-major">2</span>計画的に推進</span>
+          <span><span class="chip">3</span>手早く補強</span>
+          <span><span class="chip t-later">4</span>条件が整えば</span>
+        </div>
+      </div>
+      <div class="acts" id="acts"></div>
+    </div>
+  </section>
+
+  <section class="sec" id="recs" aria-labelledby="h-recs">
+    <div class="sec-head">
+      <h2 id="h-recs">得点に応じたガイドライン・推奨事項</h2>
+      <p>総合レベルと構成要素ごとの得点帯（0〜25／26〜50／51〜75／76〜100点）に応じて、WHOガイドライン、HHSAF、SHEA/IDSA/APIC実践勧告などに基づく推奨を表示します。構成要素の得点帯は総合レベルの区分を5分の1にした参考値です。</p>
+    </div>
+    <div class="panel rec-level" id="recLevel"></div>
+    <div class="rec-grid" id="recComps"></div>
+    <div class="rec-extra" id="recExtra"></div>
+  </section>
+
+  <section class="sec" id="refs" aria-labelledby="h-refs">
+    <div class="sec-head">
+      <h2 id="h-refs">根拠文献</h2>
+      <p class="refs-note">書誌情報・研究デザイン・主な知見・このアプリでの用途をまとめた一覧をPDFでも保存しています：<a href="references-hhsaf.pdf">引用文献リスト（PDF）</a></p>
+    </div>
+    <ol class="refs" id="refList"></ol>
+  </section>
+
+  <footer class="foot">
+    <p>本アプリはWHO「Hand Hygiene Self-Assessment Framework 2010」（日本語訳：市川高夫）の設問と配点に基づいて独自に作成した自己評価支援ツールです。WHOが作成・承認したものではありません。設問文は原典の趣旨に沿って平易に言い換えています。</p>
+    <p>改善アクションの「効果」「実施の容易さ」は引用文献に基づく作成者の評価です。最終的な行動計画は感染対策委員会などで施設の状況に合わせて決定してください。</p>
+    <p>回答はこのブラウザ内にのみ保存され、外部には送信されません。確実に残すには「JSONで保存」または「結果をテキストでコピー」を使ってください。</p>
+  </footer>
+</main>
+
+<script>
+/* DATA:BEGIN */
+const COMPONENTS = [
+  {no:1, name:'組織変革', en:'System change', radar:['組織変革'],
+   desc:'ケアの現場で擦式アルコール製剤（ABHR）を使える環境と、清潔な流水・石けん・使い捨てタオルなどの手洗い設備を整える。'},
+  {no:2, name:'教育・研修', en:'Training and education', radar:['教育・研修'],
+   desc:'すべての医療従事者に、5つのタイミングと正しい手技を中心とした研修を定期的に行う。'},
+  {no:3, name:'評価とフィードバック', en:'Evaluation and feedback', radar:['評価と','フィードバック'],
+   desc:'設備・知識・消費量・遵守率を評価し、結果を医療従事者と経営層へ返す。'},
+  {no:4, name:'職場のリマインダー', en:'Reminders in the workplace', radar:['職場の','リマインダー'],
+   desc:'ポスターやリーフレットなどで、職場で手指衛生を思い出させる。'},
+  {no:5, name:'組織の安全風土', en:'Institutional safety climate', radar:['組織の','安全風土'],
+   desc:'経営層の支援、手指衛生チーム、チャンピオン、患者参加などにより、手指衛生を優先する組織文化をつくる。'}
+];
+
+const GROUPS = {
+  '2.1':'医療従事者の研修について',
+  '2.2':'以下のWHO資料（または同等の院内版）を、すべての医療従事者がすぐに参照できますか？',
+  '3.2':'医療従事者の知識を、少なくとも年1回評価していますか（例：研修後のテスト）？',
+  '3.3':'手指衛生遵守の間接的モニタリング',
+  '3.4':'手指衛生遵守の直接的モニタリング',
+  '3.5':'フィードバック',
+  '3.5b':'系統的フィードバック：手指衛生指標のデータを、経時的な傾向がわかる形で定期的に（少なくとも6か月毎）示していますか？',
+  '4.1':'以下のポスター（または同等の内容の院内版）を掲示していますか？',
+  '5.1':'手指衛生の推進と実践に専念する「手指衛生チーム」について',
+  '5.2':'以下の経営層が、手指衛生の改善を支援する明確なコミットメントを示していますか？（大多数の医療従事者に届く文書または口頭の表明）',
+  '5.4':'全部門から手指衛生のリーダーを見いだす仕組みがありますか？',
+  '5.5':'手指衛生の推進への患者参加について',
+  '5.6':'現場での継続的な改善を支える、以下の取り組みがありますか？'
+};
+
+const YN = v => [['いいえ',0],['はい',v]];
+const QUESTIONS = [
+  {id:'1.1', c:1, s:'ABHRの利用しやすさ',
+   t:'施設内で擦式アルコール製剤（ABHR）はどの程度利用しやすいですか？',
+   n:'効果：手指消毒の殺菌効果についてEN規格またはASTM規格を満たす製剤（一般に75〜85%のエタノール、イソプロパノール、n-プロパノール、またはその組み合わせ）。認容性：臨床で使用しても医療従事者の皮膚を傷めない、または刺激しないことが信頼できるデータで示されている。ケアの現場：患者、医療従事者、患者（または患者環境）との接触を伴うケアの3つがそろう場所。患者ゾーンを離れずに使える（手の届く範囲、目安2 m以内）ことが条件。',
+   o:[['利用できない',0],['利用できるが、効果と認容性が確認されていない',0],['一部の病棟のみ、または供給が途切れることがある（効果・認容性は確認済み）',5],['施設全体で継続的に供給されている（効果・認容性は確認済み）',10],['施設全体で継続供給され、大半の病棟ではケアの現場で使える',30],['施設全体で継続供給され、すべてのケアの現場で使える',50]]},
+  {id:'1.2', c:1, s:'シンク：病床比', t:'手洗いシンクと病床の比率はどれくらいですか？',
+   o:[['1:10 に満たない',0],['大半の病棟で 1:10 以上',5],['施設全体で 1:10 以上、かつ隔離室とICUでは 1:1',10]]},
+  {id:'1.3', c:1, s:'清潔な流水', t:'清潔な流水が継続的に供給されていますか？',
+   n:'微生物と化学物質による汚染について適切な安全基準を満たす水が、配管（または適切に消毒された貯水）から供給されていること。', o:YN(10)},
+  {id:'1.4', c:1, s:'シンクの石けん', t:'すべての手洗いシンクに石けんがありますか？',
+   n:'抗菌成分を含まない（または防腐剤としてのみ含む）洗浄剤。固形・液体など形状は問わない。', o:YN(10)},
+  {id:'1.5', c:1, s:'使い捨てタオル', t:'すべての手洗いシンクに使い捨てタオルがありますか？', o:YN(10)},
+  {id:'1.6', c:1, s:'製品の専用予算', t:'手指衛生製品（ABHRなど）を継続して調達するための専用の予算がありますか？', o:YN(10)},
+  {id:'1.7', c:1, s:'インフラ改善計画', cond:'sc',
+   t:'手指衛生のインフラを改善する現実的な計画がありますか？（1.1〜1.6の合計が100点未満の場合のみ回答）',
+   n:'インフラ：最適な手指衛生に必要な設備・物品（1.1〜1.5の内容）。すべてのケアの現場でのABHR、清潔な流水の継続供給、全シンクの石けんと使い捨てタオル、シンク：病床比 1:10 など。', o:YN(5)},
+
+  {id:'2.1a', c:2, g:'2.1', s:'研修の頻度', t:'医療従事者は、手指衛生の研修をどのくらいの頻度で受けていますか？',
+   n:'研修内容の例：医療関連感染（HCAI）の定義・影響・負担、主な伝播経路、HCAI予防と手指衛生の役割、手指衛生の適応（5つのタイミング）、正しい手技（手指消毒法・手洗い法）。',
+   o:[['受けていない',0],['少なくとも1回は受けている',5],['医師・看護師、または全職種に定期研修（年1回以上）',10],['全職種に入職時の必須研修と、その後の定期研修（年1回以上）',20]]},
+  {id:'2.1b', c:2, g:'2.1', s:'修了確認の仕組み', t:'すべての医療従事者が研修を修了したことを確認する仕組みがありますか？', o:YN(20)},
+  {id:'2.2a', c:2, g:'2.2', s:'ガイドライン要約', t:'「WHO 医療における手指衛生ガイドライン：要約」', o:YN(5)},
+  {id:'2.2b', c:2, g:'2.2', s:'技術参照マニュアル', t:'WHO「手指衛生テクニカル・リファレンス・マニュアル」', o:YN(5)},
+  {id:'2.2c', c:2, g:'2.2', s:'パンフレット', t:'WHO「手指衛生：なぜ、どのように、いつ」パンフレット', o:YN(5)},
+  {id:'2.2d', c:2, g:'2.2', s:'手袋使用リーフレット', t:'WHO「手袋使用に関する情報」リーフレット', o:YN(5)},
+  {id:'2.3', c:2, s:'研修トレーナー', t:'手指衛生教育のトレーナーを務められる十分なスキルを持つ専門家が、施設内で活動していますか？',
+   n:'感染管理または感染症の研修を受けた医師・看護師で、職員教育のための専任時間が業務として位置づけられている人。施設によっては、手指衛生のエビデンスと実践を学ぶ専任時間を持つ臨床の医師・看護師でもよい。', o:YN(15)},
+  {id:'2.4', c:2, s:'観察者の育成・検証', t:'手指衛生遵守の観察者を育成し、検証（妥当性の確認）する仕組みがありますか？', o:YN(15)},
+  {id:'2.5', c:2, s:'研修の専用予算', t:'手指衛生の研修のための専用予算がありますか？', o:YN(10)},
+
+  {id:'3.1', c:3, s:'病棟設備監査', t:'ABHR・石けん・使い捨てタオルなど手指衛生資源の利用可能性を確認する病棟単位の監査を、定期的に（少なくとも年1回）行っていますか？', o:YN(10)},
+  {id:'3.2a', c:3, g:'3.2', s:'知識評価（適応）', t:'手指衛生の適応（タイミング）', o:YN(5)},
+  {id:'3.2b', c:3, g:'3.2', s:'知識評価（手技）', t:'手指衛生の正しい手技', o:YN(5)},
+  {id:'3.3a', c:3, g:'3.3', s:'ABHR消費量', t:'ABHRの消費量を定期的に（少なくとも3か月毎）モニタリングしていますか？', o:YN(5)},
+  {id:'3.3b', c:3, g:'3.3', s:'石けん消費量', t:'石けんの消費量を定期的に（少なくとも3か月毎）モニタリングしていますか？', o:YN(5)},
+  {id:'3.3c', c:3, g:'3.3', s:'ABHR 20 L/1,000患者日', t:'ABHRの消費量は、1,000患者日あたり20 L以上ですか？', o:[['いいえ（または未測定）',0],['はい',5]]},
+  {id:'g3.4', c:3, g:'3.4', s:'直接観察の前提条件', gate:true,
+   t:'観察者は訓練と検証を受けており、WHO「手指衛生の5つのタイミング」（または同等）の方法で観察していますか？',
+   n:'HHSAFでは、この条件を満たす場合のみ3.4a・3.4bに回答します。「いいえ」の場合、3.4a・3.4bは0点です。この設問自体に得点はありません。',
+   o:[['いいえ',0],['はい',0]]},
+  {id:'3.4a', c:3, g:'3.4', s:'直接観察の頻度', cond:'gate', t:'WHO手指衛生観察ツール（または同等の方法）による遵守状況の直接観察は、どのくらいの頻度で行っていますか？',
+   o:[['行っていない',0],['不定期',5],['年1回',10],['3か月毎、またはそれ以上',15]]},
+  {id:'3.4b', c:3, g:'3.4', s:'遵守率', cond:'gate', t:'直接観察による施設全体の手指衛生遵守率はどれくらいですか？',
+   o:[['30%以下',0],['31〜40%',5],['41〜50%',10],['51〜60%',15],['61〜70%',20],['71〜80%',25],['81%以上',30]]},
+  {id:'3.5a', c:3, g:'3.5', s:'即時フィードバック', t:'即時フィードバック：各観察セッションの終わりに、医療従事者へその場でフィードバックしていますか？', o:YN(5)},
+  {id:'3.5b-i', c:3, g:'3.5b', s:'職員への定期フィードバック', t:'医療従事者へ', o:YN(7.5)},
+  {id:'3.5b-ii', c:3, g:'3.5b', s:'経営層への定期フィードバック', t:'施設の経営層へ', o:YN(7.5)},
+
+  {id:'4.1a', c:4, g:'4.1', s:'5つのタイミングのポスター', t:'手指衛生の適応（5つのタイミング）を説明するポスター',
+   o:[['掲示していない',0],['一部の病棟・処置エリアに掲示',15],['大半の病棟・処置エリアに掲示',20],['すべての病棟・処置エリアに掲示',25]]},
+  {id:'4.1b', c:4, g:'4.1', s:'手指消毒法ポスター', t:'ABHRの正しい使い方（手指消毒法）を説明するポスター',
+   o:[['掲示していない',0],['一部の病棟・処置エリアに掲示',5],['大半の病棟・処置エリアに掲示',10],['すべての病棟・処置エリアに掲示',15]]},
+  {id:'4.1c', c:4, g:'4.1', s:'手洗い法ポスター', t:'正しい手洗い法を説明するポスター',
+   o:[['掲示していない',0],['一部の病棟・処置エリアに掲示',5],['大半の病棟・処置エリアに掲示',7.5],['すべての病棟・処置エリアの、すべての手洗いシンクに掲示',10]]},
+  {id:'4.2', c:4, s:'ポスターの点検', t:'破損を見つけて貼り替えるための、全ポスターの系統的な点検をどのくらいの頻度で行っていますか？',
+   o:[['行っていない',0],['少なくとも年1回',10],['2〜3か月毎',15]]},
+  {id:'4.3', c:4, s:'その他のポスターの更新', t:'上記以外のポスターを掲示し、定期的に更新することで手指衛生を推進していますか？', o:YN(10)},
+  {id:'4.4', c:4, s:'情報リーフレット', t:'病棟で手指衛生の情報リーフレットを利用できますか？', o:YN(10)},
+  {id:'4.5', c:4, s:'その他のリマインダー', t:'施設全体に、その他の職場リマインダー（キャンペーンのスクリーンセーバー、バッジ、ステッカーなど）がありますか？', o:YN(15)},
+
+  {id:'5.1a', c:5, g:'5.1', s:'手指衛生チーム', t:'チームを設置していますか？',
+   n:'構成は施設の資源によって様々。感染管理部門が担うことが多いが、推進を担当する職員1名から、複数部門のスタッフによる会議体までありうる。', o:YN(5)},
+  {id:'5.1b', c:5, g:'5.1', s:'定例会議', t:'チームは定期的に（少なくとも月1回）会合していますか？', o:YN(5)},
+  {id:'5.1c', c:5, g:'5.1', s:'専任の活動時間', t:'チームには、積極的な推進活動（教育、遵守状況のモニタリング、新しい活動の企画など）のための専任時間がありますか？', o:YN(5)},
+  {id:'5.2a', c:5, g:'5.2', s:'最高責任者の表明', t:'最高責任者（院長・理事長など）', o:YN(10)},
+  {id:'5.2b', c:5, g:'5.2', s:'医療の責任者の表明', t:'医療部門の責任者（副院長・診療部長など）', o:YN(5)},
+  {id:'5.2c', c:5, g:'5.2', s:'看護の責任者の表明', t:'看護部門の責任者（看護部長）', o:YN(5)},
+  {id:'5.3', c:5, s:'5月5日の計画', t:'5月5日（WHO世界手指衛生デー）に向けて、施設全体で手指衛生を推進する明確な計画を立てていますか？', o:YN(10)},
+  {id:'5.4a', c:5, g:'5.4', s:'チャンピオンの指名', t:'手指衛生チャンピオンを指名する仕組み',
+   n:'手指衛生チャンピオン：患者安全と手指衛生の推進者として、自部署や施設全体で取り組みを広める責任を担う職員。', o:YN(5)},
+  {id:'5.4b', c:5, g:'5.4', s:'ロールモデル', t:'手指衛生のロールモデルを認定し、活用する仕組み',
+   n:'ロールモデル：行動を周囲が見習う職員。目安は遵守率80%以上で、周囲に声をかけられ、5つのタイミングを教えられること。', o:YN(5)},
+  {id:'5.5a', c:5, g:'5.5', s:'患者への情報提供', t:'患者に手指衛生の重要性を伝えていますか（リーフレットなど）？', o:YN(5)},
+  {id:'5.5b', c:5, g:'5.5', s:'患者参加プログラム', t:'患者参加の正式なプログラムを実施していますか？', o:YN(10)},
+  {id:'5.6a', c:5, g:'5.6', s:'eラーニング', t:'手指衛生のeラーニング教材', o:YN(5)},
+  {id:'5.6b', c:5, g:'5.6', s:'年間目標', t:'毎年設定する、施設として達成を目指す手指衛生の目標', o:YN(5)},
+  {id:'5.6c', c:5, g:'5.6', s:'好事例の共有', t:'信頼でき、検証された院内の工夫を施設内で共有する仕組み', o:YN(5)},
+  {id:'5.6d', c:5, g:'5.6', s:'定期的な広報', t:'定期的に手指衛生を取り上げる広報（院内報、臨床カンファレンスなど）', o:YN(5)},
+  {id:'5.6e', c:5, g:'5.6', s:'個人の説明責任', t:'個人の説明責任の仕組み',
+   n:'医療従事者が自らの手指衛生行動に責任を持つよう促す明確な仕組み。例：観察者や感染管理担当者からの通知（個人評価に反映されうる）、同僚からの指摘、上位部門への報告。', o:YN(5)},
+  {id:'5.6f', c:5, g:'5.6', s:'バディ制度', t:'新入職員のためのバディ制度',
+   n:'新入職員ごとに訓練を受けた常勤職員がつき、施設の手指衛生の文化（適応と手技の実地指導、院内の推進活動の説明を含む）へ導く仕組み。', o:YN(5)}
+];
+
+const LEADERSHIP = [
+  {id:'L1', c:1, t:'ケアの現場で最適な手指衛生を行うために必要なインフラ整備について、費用対効果の分析を行っている'},
+  {id:'L2', c:1, t:'実施された手指衛生行為の80%以上を、ABHRによる手指消毒が占めている'},
+  {id:'L3', c:2, t:'手指衛生チームが、地域の他施設の代表者に手指衛生推進の研修を行っている'},
+  {id:'L4', c:2, t:'手指衛生の原則が、地域の医学・看護教育のカリキュラムに組み込まれている'},
+  {id:'L5', c:3, t:'特定の医療関連感染（黄色ブドウ球菌菌血症、グラム陰性菌菌血症、デバイス関連感染など）をサーベイランスしている'},
+  {id:'L6', c:3, t:'高リスク部門（集中治療室、新生児部門など）の医療関連感染をサーベイランスする仕組みがある'},
+  {id:'L7', c:3, t:'施設全体の医療関連感染の有病率調査を、少なくとも年1回行っている'},
+  {id:'L8', c:3, t:'医療関連感染率を、手指衛生遵守率とあわせて経営層と医療従事者に示している'},
+  {id:'L9', c:3, t:'最適な手指衛生遵守を妨げる要因と、院内の医療関連感染の原因を理解するための構造化された評価を行い、結果を経営層へ報告している'},
+  {id:'L10', c:4, t:'現場の医療従事者がデザインした新しいポスターを、定期的に作成する仕組みがある'},
+  {id:'L11', c:4, t:'自施設で作成したポスターが、他施設で使われている'},
+  {id:'L12', c:4, t:'革新的な手指衛生リマインダーを開発し、施設内で検証している'},
+  {id:'L13', c:5, t:'WHOガイドラインで研究が必要とされた課題に取り組む、手指衛生の研究課題を策定している'},
+  {id:'L14', c:5, t:'手指衛生の分野で、論文発表や学会発表（口演・ポスター）に積極的に参加している'},
+  {id:'L15', c:5, t:'患者に、医療従事者へ手指衛生を促すよう勧めている'},
+  {id:'L16', c:5, t:'患者と面会者に、正しい手指衛生の方法を教育している'},
+  {id:'L17', c:5, t:'国の手指衛生キャンペーン（ある場合）に貢献し、支援している'},
+  {id:'L18', c:5, t:'手指衛生キャンペーンの影響評価を、感染対策プログラムの将来計画に組み込んでいる'},
+  {id:'L19', c:5, t:'施設全体の手指衛生遵守率を改善する年間目標を設定している'},
+  {id:'L20', c:5, t:'（年間目標がある場合）昨年度の目標を達成した'}
+];
+
+const LEVELS = [
+  {idx:0, name:'不十分', en:'Inadequate', min:0, max:125,
+   desc:'手指衛生の実践と推進が不十分です。大幅な改善が必要です。'},
+  {idx:1, name:'基本', en:'Basic', min:126, max:250,
+   desc:'いくつかの対策は講じられていますが、満足できる水準ではありません。さらなる改善が必要です。'},
+  {idx:2, name:'中級', en:'Intermediate', min:251, max:375,
+   desc:'適切な推進戦略があり、手指衛生の実践は改善しています。改善を維持し前進させるための長期計画の策定が重要です。'},
+  {idx:3, name:'上級', en:'Advanced', min:376, max:500,
+   desc:'手指衛生の推進と最適な実践が維持・改善され、施設の安全文化として定着しつつあります。'}
+];
+
+/* impact（期待される効果）と ease（実施の容易さ）は 1〜5。ease は現状に応じて変わる場合に関数で与える。 */
+const ACTIONS = [
+  {id:'A01', c:1, qs:['1.1'], impact:5, ease:ans=>(pointsOf('1.1',ans) < 10 ? 3 : 4),
+   easeNote:'未導入・供給不安定からの整備は調達が必要（3）。施設全体で供給済みなら携帯用ボトルやベッドサイド設置で短期に実施可能（4）',
+   title:'ABHRをケアの現場（患者ゾーン内・手の届く範囲）へ',
+   how:'病棟ごとにベッドサイド・処置カート・病室入口のどこでABHRが使えるかを確認し、患者ゾーン内にない場所から設置する。設置が難しい場所は携帯用ボトルで補う。',
+   why:'ABHRをベッドサイドに導入した院内全体の推進で、遵守率が48%から66%に、医療関連感染の有病率が16.9%から9.9%に改善し、MRSA伝播も減少した[[pittet2000]]。ABHRを使用場所の近くに置くと遵守率がわずかに改善する可能性が高い（確実性 中等度）[[gould2017]]。WHOとSHEA/IDSA/APICは、ABHRの優先使用と職員の動線上への設置を推奨している[[who2009]][[glowicz2023]]。'},
+  {id:'A02', c:1, qs:['1.4','1.5'], impact:3, ease:5,
+   title:'すべての手洗いシンクに石けんと使い捨てペーパータオルを常備',
+   how:'物品管理部門と定数と補充頻度を決め、環境ラウンドで欠品を点検する。',
+   why:'WHOは、目に見える汚れがある場合や芽胞形成菌への曝露が疑われる場合の石けんと流水による手洗い、使い捨てタオルでの乾燥を推奨している[[who2009]]。英国の全国キャンペーンでは、石けん調達量の増加がC. difficile感染の減少と独立して関連した[[stone2012]]。'},
+  {id:'A03', c:1, qs:['1.6'], impact:4, ease:2,
+   title:'手指衛生製品を継続して調達するための専用予算を確保',
+   how:'過去1年の使用量と目標使用量から必要量を試算し、次年度予算に専用項目として計上する。',
+   why:'2019年のWHO世界調査（90か国3,206施設）では、施設の財源と国の所得水準がHHSAF得点の主な規定因子だった[[dekraker2022]]。物品に容易にアクセスできることは、効果的な感染対策プログラムの主要要素の一つである[[zingg2015]]。'},
+  {id:'A04', c:1, qs:['1.7'], impact:2, ease:5,
+   title:'インフラ改善の現実的な計画を文書にする',
+   how:'病棟インフラ調査の結果をもとに、改善項目・担当・期限・費用を1枚の計画書にまとめ、感染対策委員会で承認を得る。',
+   why:'WHOの実施ガイドは、ベースライン評価にもとづく行動計画を改善サイクルの中心に置いている[[whoguide2009]]。計画書は予算要求や経営層への説明の土台になる。'},
+  {id:'A05', c:1, qs:['1.2'], impact:2, ease:1,
+   title:'手洗いシンクの増設（施設全体で 1:10、ICU・隔離室は 1:1）',
+   how:'改修・新築の計画に合わせ、ICU・隔離室のシンクを優先して組み込む。',
+   why:'日常の手指衛生はABHRが第一選択であり[[who2009]]、シンクを増やした病棟でも遵守率は改善しなかったとの報告がある[[lankford2003]]。ICU・隔離室では手洗いが必要な場面に備えて計画的に整備する。'},
+  {id:'A06', c:1, qs:['1.3'], impact:3, ease:1,
+   title:'清潔な流水の継続供給を確保',
+   how:'施設管理部門と水質・給水の状況を確認し、改善計画を立てる。',
+   why:'手洗いの前提条件であり、WHOは微生物学的・化学的に安全な水の確保を求めている[[who2009]]。設備の問題のため長期計画になる。'},
+
+  {id:'A07', c:2, qs:['2.1a'], impact:4, ease:ans=>(pointsOf('2.1a',ans) === 0 ? 4 : 3),
+   easeNote:'未実施ならWHO教材で早期に開始可能（4）。全職種の必須化は院内規程・人事との調整が必要（3）',
+   title:'全職種に入職時の必須研修と年1回以上の定期研修',
+   how:'入職時オリエンテーションに必須の枠を設け、全職種（医師・委託職員を含む）の年1回研修を院内規程に明記する。',
+   why:'WHO戦略の導入により、医療従事者の知識得点は18.7から24.7に上がり、遵守率も改善した[[allegranzi2013]]。ただし教育単独の効果は確実性が低く[[gould2017]]、観察やフィードバックと組み合わせる。世界調査では、研修を必須にしている施設は半数に満たなかった[[dekraker2022]]。'},
+  {id:'A08', c:2, qs:['2.1b'], impact:3, ease:4,
+   title:'研修の修了を確認する仕組み（受講記録と未受講者への督促）',
+   how:'eラーニングの受講ログや出席記録を部署別に集計し、未受講者と所属長へ期限付きで通知する。',
+   why:'研修は全員に届いてはじめて効果を持つ。オーストラリアの全国事業ではオンライン学習の修了が約199万件に達し、遵守率の持続的な改善を支えた[[grayson2018]]。'},
+  {id:'A09', c:2, qs:['2.2a','2.2b','2.2c','2.2d'], impact:1, ease:5,
+   title:'WHO資料（日本語版）を全職員が参照できるようにする',
+   how:'ガイドライン要約・技術参照マニュアル・パンフレット・手袋使用リーフレットの日本語版をイントラネットに掲載し、研修資料からリンクする。',
+   why:'資料の共有は研修やリマインダーの土台であり、単独で行動を変える効果は示されていない[[gould2017]]。費用がかからず即日実施できる。'},
+  {id:'A10', c:2, qs:['2.3'], impact:4, ease:2,
+   title:'研修の専任時間を持つ手指衛生トレーナー（ICN・ICDなど）を確保',
+   how:'ICN・ICDの業務に研修の専任時間を明記し、不足する場合は感染管理の専門資格を持つ看護師などの育成と配置を計画する。',
+   why:'WHOの感染対策コアコンポーネントは、訓練を受けた専任の感染対策担当者の配置を推奨している[[storr2017]]。米国のHHSAF調査では、感染対策担当者が100床あたり0.75人を超える施設は得点が36点高かった[[allegranzi2014]]。'},
+  {id:'A11', c:2, qs:['2.4'], impact:4, ease:4,
+   title:'観察者を育成し、観察者間の一致を確認する',
+   how:'観察者研修（5つのタイミング、観察フォーム）を行い、同じ場面を複数の観察者が評価して一致を確かめてから本観察に入る。',
+   why:'5つのタイミングは、研修・観察・報告を同じ枠組みで行うために作られた[[sax2007]]。観察者がそろっていないと、遵守率の比較やフィードバックの信頼性が損なわれる。指導者を養成する標準化プログラムも公表されている[[tartari2019]]。'},
+  {id:'A12', c:2, qs:['2.5'], impact:3, ease:2,
+   title:'手指衛生研修の専用予算を確保',
+   how:'教材・eラーニング・外部研修参加の費用を試算し、予算要求する。',
+   why:'世界調査で教育の専用予算があった施設は42.8%にとどまった[[dekraker2022]]。オーストラリアの全国事業の費用は入院1件あたり約0.06豪ドルと低額だった[[grayson2018]]。'},
+
+  {id:'A13', c:3, qs:['3.1'], impact:3, ease:5,
+   title:'年1回以上の病棟設備監査（ABHR・石けん・タオル）',
+   how:'WHOの病棟インフラ調査票などを使い、年1回（できれば半年毎）全病棟を点検する。',
+   why:'WHOは病棟インフラ調査票を提供し、設備の欠落を定期的に点検するよう求めている[[whoguide2009]]。監査は効果的な感染対策プログラムの10要素の一つである[[zingg2015]]。'},
+  {id:'A14', c:3, qs:['3.2a','3.2b'], impact:2, ease:5,
+   title:'適応と手技の知識を年1回評価する（研修後テストなど）',
+   how:'研修の前後に、5つのタイミングと手技の確認テストを行い、正答率を記録する。',
+   why:'WHOの知識調査票を研修に組み込めば低い負担で実施できる[[whoguide2009]]。研修で知識は向上するが[[allegranzi2013]]、知識は行動を十分に予測しないため直接観察と併用する。'},
+  {id:'A15', c:3, qs:['3.3a','3.3b'], impact:3, ease:5,
+   title:'ABHRと石けんの消費量をモニタリング（3か月毎以上、部署別）',
+   how:'薬剤部・物品管理部門から払い出し量を毎月入手し、部署別に1,000患者日あたりの使用量を算出する。',
+   why:'消費量は、観察者がいると行動が変わる影響（Hawthorne効果。監査者が見える場所では実施率が約3倍）を受けない指標である[[srigley2014]]。ジュネーブの研究でも、ABHR消費量の増加（3.5→15.4 L/1,000患者日）が遵守率の改善と並行した[[pittet2000]]。'},
+  {id:'A16', c:3, qs:['3.3c'], impact:3, ease:3,
+   title:'部署別のABHR使用量目標（20 L/1,000患者日以上）を設定して返す',
+   how:'部署ごとに目標使用量を決め、毎月の実績を観察遵守率とあわせて部署へ返す。',
+   why:'使用量は行動の結果であり単独では上げにくいが、部署別に示すと目標設定とフィードバックに使える[[ivers2012]]。20 L/1,000患者日はHHSAFの基準値である[[hhsaf2010]]。'},
+  {id:'A17', c:3, qs:['g3.4','3.4a'], impact:5, ease:3,
+   title:'訓練した観察者による5つのタイミングの直接観察（3か月毎以上）',
+   how:'訓練・検証を終えた観察者で、各部署の観察を少なくとも3か月毎に行う。時間帯と職種が偏らないよう計画する。',
+   why:'直接観察はフィードバックの土台である。オーストラリアの全国事業は年3回の標準化された観察を続け、遵守率を63.6%から84.3%に高めた。遵守率が10%上がるごとに医療関連黄色ブドウ球菌菌血症は15%減少した[[grayson2018]]。観察者の時間が必要なため、容易さは中等度とした。'},
+  {id:'A18', c:3, qs:['3.5a'], impact:4, ease:5,
+   title:'観察の直後にその場でフィードバックする',
+   how:'観察セッションの終わりに、良かった点と改善点をその場で口頭で伝える。',
+   why:'監査とフィードバックは専門職の実践を改善し（中央値 +4.3ポイント）、同僚や上司から、繰り返し、口頭と書面で、明確な目標を伴って行うと効果が大きい[[ivers2012]]。手指衛生でもフィードバックは遵守率を改善しうる（確実性 低）[[gould2017]]。観察と同時に行えば追加費用はかからない。'},
+  {id:'A19', c:3, qs:['3.5b-i','3.5b-ii'], impact:5, ease:4,
+   title:'6か月毎以上の系統的フィードバック（傾向グラフを職員と経営層へ）',
+   how:'部署別・職種別の遵守率と使用量の推移をグラフにし、6か月毎（できれば毎月）に部署会議と経営会議へ報告する。',
+   why:'パフォーマンスフィードバックは遵守率を改善しうる（確実性 低）ほか、感染と保菌をわずかに減らす可能性が高い（確実性 中等度）[[gould2017]]。WHO戦略に目標設定・報奨・説明責任を加えると、遵守率はさらに改善した[[luangasanatip2015]]。既存の観察データをグラフにするだけで始められる。'},
+
+  {id:'A20', c:4, qs:['4.1a'], impact:2, ease:5,
+   title:'5つのタイミングのポスターをすべての病棟・処置エリアに掲示',
+   how:'日本語版のポスターを、すべての病棟・処置エリアの目につく場所（ディスペンサーの近くなど）に掲示する。',
+   why:'掲示などのキューは遵守率をわずかに改善する可能性がある（確実性 低）[[gould2017]]。単独の効果は小さいが、費用が少なくHHSAF得点への寄与は大きい（最大25点）。'},
+  {id:'A21', c:4, qs:['4.1b','4.1c'], impact:2, ease:5,
+   title:'手指消毒法と手洗い法のポスターを掲示（手洗い法は全シンクに）',
+   how:'ABHRの設置場所に手指消毒法、すべての手洗いシンクに手洗い法のポスターを掲示する。',
+   why:'正しい手技の手順を使用場所で示すことはWHOの推奨する職場リマインダーの基本である[[who2009]]。効果の確実性は低い[[gould2017]]。'},
+  {id:'A22', c:4, qs:['4.2'], impact:1, ease:5,
+   title:'ポスターを2〜3か月毎に点検して貼り替える',
+   how:'環境ラウンドのチェック項目に掲示物の状態を加え、破損や色あせを貼り替える。',
+   why:'WHOの実施ガイドは、リマインダーの維持管理を求めている[[whoguide2009]]。環境ラウンドに組み込めば負担は小さい。'},
+  {id:'A23', c:4, qs:['4.3'], impact:2, ease:4,
+   title:'新しいポスターを職員参加で作り、定期的に入れ替える',
+   how:'年に数回、テーマを変えた新しいポスターを職員参加で作り、掲示を入れ替える。',
+   why:'同じ掲示物には慣れが生じるため、更新して注意を引き直す。現場の職員がデザインしたポスターは、HHSAFのリーダーシップ基準にも含まれる[[hhsaf2010]]。'},
+  {id:'A24', c:4, qs:['4.4'], impact:1, ease:5,
+   title:'病棟に手指衛生の情報リーフレットを置く',
+   how:'病棟に職員向けのリーフレットを置き、研修でも配布する。',
+   why:'WHOのツールキットに含まれる基本的な教材である[[whoguide2009]]。単独の効果は小さい。'},
+  {id:'A25', c:4, qs:['4.5'], impact:2, ease:5,
+   title:'その他のリマインダー（ログイン画面、バッジ、ステッカーなど）',
+   how:'電子カルテのログイン画面、名札のバッジ、ディスペンサー周辺のステッカーなどを活用する。',
+   why:'掲示や香りなどのキューは遵守率をわずかに改善する可能性がある（確実性 低）[[gould2017]]。既存の端末や物品を使えば費用はほとんどかからない。'},
+
+  {id:'A26', c:5, qs:['5.1a','5.1b'], impact:4, ease:4,
+   title:'手指衛生チームを設置し、月1回以上の定例会議を開く',
+   how:'ICTやリンクナース会を手指衛生チームとして位置づけ、月1回の定例会議で観察結果と行動計画を検討する。',
+   why:'感染対策の組織化、多職種による多角的なプログラム、チャンピオンの関与は、効果的な感染対策プログラムの主要要素である[[zingg2015]][[storr2017]]。既存の会議体を使えば短期間で始められる。'},
+  {id:'A27', c:5, qs:['5.1c'], impact:4, ease:2,
+   title:'チームに推進活動のための専任時間を確保する',
+   how:'観察・教育・企画にあてる時間を勤務計画に組み込むよう、所属長・経営層と合意する。',
+   why:'活動時間は人員配置の問題で、経営判断が必要になる。感染対策担当者の配置が手厚い施設ほどHHSAF得点が高い[[allegranzi2014]][[storr2017]]。'},
+  {id:'A28', c:5, qs:['5.2a','5.2b','5.2c'], impact:5, ease:4,
+   title:'院長・医療部門長・看護部長が手指衛生改善への支援を明確に表明',
+   how:'3者の連名で、手指衛生改善への支援を全職員向けに文書で表明する。朝礼や会議での言及も続ける。',
+   why:'病院のリーダーシップはHAI予防の成否を左右する[[saint2010]]。世界調査は、さらなる改善の鍵として資源、リーダーシップ、組織的支援を挙げた[[dekraker2022]]。表明そのものに費用はかからない。'},
+  {id:'A29', c:5, qs:['5.3'], impact:2, ease:5,
+   title:'5月5日（世界手指衛生デー）に向けた施設全体の計画',
+   how:'5月5日に合わせたキャンペーン（啓発、表彰、クイズなど）を年間計画に組み込む。',
+   why:'米国の調査では、WHOキャンペーンに参加する施設のHHSAF得点が41点高かった[[allegranzi2014]]。英国の全国キャンペーンでは手指衛生製品の調達量が約3倍に増えた[[stone2012]]。'},
+  {id:'A30', c:5, qs:['5.4a'], impact:4, ease:4,
+   title:'各部署に手指衛生チャンピオンを指名する',
+   how:'各部署から1名以上を任命し、役割（声かけ、観察の補助、部署内のフィードバック）を明文化する。',
+   why:'チャンピオンの関与は、効果的な感染対策プログラムの10要素の一つである[[zingg2015]]。リンクナースなど既存の体制で始められる。'},
+  {id:'A31', c:5, qs:['5.4b'], impact:4, ease:3,
+   title:'ロールモデル（特に医師・管理職）を認定し、活用する',
+   how:'遵守率が高く、周囲に声をかけられ、5つのタイミングを教えられる職員をロールモデルとして認定し、院内に紹介する。',
+   why:'同室の上位職が手指衛生を行わないと、他の職員の遵守率も下がる[[lankford2003]]。日本の多施設研究では患者接触前の遵守率が医師15%・看護師23%と低く、特に医師のロールモデルが重要である[[sakihama2016]]。'},
+  {id:'A32', c:5, qs:['5.5a'], impact:2, ease:5,
+   title:'患者に手指衛生の重要性を伝える（入院案内・リーフレット）',
+   how:'入院案内やリーフレットで、手指衛生の重要性と、職員への声かけを歓迎していることを伝える。',
+   why:'多くの患者は医療従事者に手指衛生を確かめる意思があるが、職員側からの働きかけが参加を後押しする[[mcguckin2013]]。入院オリエンテーションに組み込めば費用は小さい。'},
+  {id:'A33', c:5, qs:['5.5b'], impact:2, ease:3,
+   title:'患者参加の正式なプログラム',
+   how:'患者・家族が手指衛生を確認し、声をかけられる仕組み（声かけカード、職員のバッジなど）を、職員の受け入れ準備とあわせて導入する。',
+   why:'多角的戦略が確立した病院のクラスターRCTでは、対照に比べた遵守率の改善は強化フィードバック単独で3ポイント（p=0.19）、患者参加を加えて4ポイント（p=0.048）で、上乗せ効果は小さかった[[stewardson2016]]。'},
+  {id:'A34', c:5, qs:['5.6a'], impact:3, ease:4,
+   title:'手指衛生のeラーニング教材を導入する',
+   how:'既存の日本語教材を導入し、受講記録を研修管理と連動させる。',
+   why:'オーストラリアの全国事業では、オンライン学習が研修の中心を担った[[grayson2018]]。'},
+  {id:'A35', c:5, qs:['5.6b'], impact:4, ease:5,
+   title:'施設の年間目標（遵守率・使用量）を毎年設定する',
+   how:'感染対策委員会で遵守率と使用量の年間目標を決め、年度末に達成度を評価する。',
+   why:'ネットワークメタ解析では、WHO戦略に目標設定を加えると遵守率がさらに改善した[[luangasanatip2015]]。監査とフィードバックは明確な目標を伴うと効果が大きい[[ivers2012]]。委員会で決めるだけで始められる。'},
+  {id:'A36', c:5, qs:['5.6c'], impact:2, ease:4,
+   title:'院内の好事例（検証済みの工夫）を共有する仕組み',
+   how:'部署の工夫（配置の変更、声かけの方法など）を委員会報告や院内ポータルで共有する。',
+   why:'部署間での成功事例の共有は組織学習を促し、前向きな組織文化につながる[[zingg2015]]。'},
+  {id:'A37', c:5, qs:['5.6d'], impact:2, ease:5,
+   title:'院内報やカンファレンスで定期的に手指衛生を取り上げる',
+   how:'院内報、医局会、看護部会などで、手指衛生の結果や話題を定期的に取り上げる。',
+   why:'継続的なコミュニケーションはWHO実施ガイドの安全風土づくりの要素である[[whoguide2009]]。'},
+  {id:'A38', c:5, qs:['5.6e'], impact:4, ease:3,
+   title:'公正な文化に基づく個人の説明責任の仕組み',
+   how:'遵守しない状態が続く場合の対応（本人への通知→面談→所属長への報告）を段階的に定め、職員と合意してから運用する。',
+   why:'ネットワークメタ解析では、WHO戦略に説明責任を加えると遵守率がさらに改善した[[luangasanatip2015]]。罰則的にならないよう、職員との合意形成に時間をかける。'},
+  {id:'A39', c:5, qs:['5.6f'], impact:3, ease:4,
+   title:'新入職員のバディ制度',
+   how:'プリセプター制度に、手指衛生の実地指導（5つのタイミング、手技、院内の取り組みの説明）を組み込む。',
+   why:'新入職員は周囲の行動から規範を学ぶ（ロールモデル効果）[[lankford2003]]。既存のプリセプター制度で実施できる。'}
+];
+
+const TIERS = {
+  qw:{label:'最優先', long:'最優先（すぐ着手）', rule:'効果4以上かつ容易さ4以上'},
+  major:{label:'計画的に推進', long:'計画的に推進（中長期）', rule:'効果4以上、容易さ3以下'},
+  fill:{label:'手早く補強', long:'手早く補強', rule:'効果3以下、容易さ4以上'},
+  later:{label:'条件が整えば', long:'条件が整えば実施', rule:'効果3以下かつ容易さ3以下'}
+};
+
+const RUBRIC = {
+  impact:[
+    [5,'RCT・メタ解析・大規模研究で、遵守率または医療関連感染の改善が一貫して示された中核の対策'],
+    [4,'多角的戦略の必須要素としてガイドラインが推奨し、観察研究などで効果が支持される対策'],
+    [3,'多角的戦略を支える要素。単独の効果のエビデンスは限られる'],
+    [2,'補助的な要素。単独の効果は小さいか、確実性が低い'],
+    [1,'効果のエビデンスが乏しいか間接的。他の要素の土台として実施']
+  ],
+  ease:[
+    [5,'感染対策部門の裁量で1か月以内に実施でき、追加費用はほとんどない'],
+    [4,'数か月以内に実施でき、少額の費用または院内調整で足りる'],
+    [3,'部署横断の調整や、継続的な人手・時間が必要'],
+    [2,'予算化や人員配置など経営判断が必要'],
+    [1,'設備投資や工事を伴う長期計画が必要']
+  ]
+};
+
+const COMP_RECS = {
+  1:[
+    ['ABHRを施設全体に導入し、供給が途切れない体制づくりを最優先にする。日常の手指衛生はABHRを第一選択とする[[who2009]][[glowicz2023]]。',
+     'WHOの病棟インフラ調査で、ABHR・石けん・ペーパータオル・シンクの不足を病棟ごとに洗い出す[[whoguide2009]]。',
+     '効果（EN/ASTM規格）と皮膚認容性が確認された製剤を選び、手荒れ対策の保湿剤も用意する[[who2009]]。'],
+    ['ABHRをケアの現場（患者ゾーン内、手の届く範囲）へ広げる。ベッドサイド設置と携帯用ボトルを組み合わせる[[gould2017]][[glowicz2023]]。',
+     'すべてのシンクに石けんと使い捨てペーパータオルを常備し、定数補充のルールを決める。',
+     '手指衛生製品の継続調達を予算化し、インフラ改善計画を文書にする[[dekraker2022]]。'],
+    ['すべてのケアの現場への設置を完了し、欠品・故障がないことを定期的な監査で確認する[[zingg2015]]。',
+     'ディスペンサーの位置を職員の動線に合わせて見直す[[glowicz2023]]。',
+     'ICU・隔離室のシンク：病床比 1:1 は改修計画に組み込む。'],
+    ['水準を維持しながら、リーダーシップ基準（インフラ整備の費用対効果分析、手指衛生行為の80%以上をABHRが占める）に取り組む[[hhsaf2010]]。',
+     '製剤を変更するときは、効果・認容性・受容性を職員評価で確認する[[who2009]]。']
+  ],
+  2:[
+    ['全職種を対象に、医療関連感染の影響、伝播経路、5つのタイミング、正しい手技を扱う基礎研修を始める[[sax2007]][[who2009]]。',
+     'WHO資料の日本語版を全職員が参照できるようにする。',
+     '研修だけでは行動は変わりにくいため、観察とフィードバックを同時に計画する[[gould2017]]。'],
+    ['入職時の必須研修と年1回以上の定期研修を院内規程で制度化し、受講記録で修了を確認する[[dekraker2022]]。',
+     '直接観察を担う観察者を育成し、観察者間の一致を確認する[[tartari2019]]。'],
+    ['研修を担う専門家（ICN・ICDなど）の専任時間と、研修の専用予算を確保する[[storr2017]][[allegranzi2014]]。',
+     '職種別（特に医師）の内容、eラーニング、シミュレーションを組み合わせる[[grayson2018]]。'],
+    ['地域の連携施設への研修提供や、医学・看護教育への組み込みに取り組む（リーダーシップ基準）[[hhsaf2010]]。',
+     '研修の効果を、遵守率と知識評価の推移で確かめる。']
+  ],
+  3:[
+    ['低い負担で始められる指標から整える。病棟設備監査と、ABHR・石けん消費量の定期集計から始める[[whoguide2009]]。',
+     '消費量は観察者の影響（Hawthorne効果）を受けないため、直接観察と併用する価値がある[[srigley2014]]。',
+     '観察者を訓練・検証し、5つのタイミングにもとづく直接観察の準備をする[[sax2007]]。'],
+    ['訓練した観察者による直接観察を定期化（3か月毎以上）し、観察の直後にその場でフィードバックする[[ivers2012]][[gould2017]]。',
+     '年1回、研修後テストなどで知識（適応・手技）を評価する。'],
+    ['6か月毎以上、傾向グラフで職員と経営層の両方へ系統的にフィードバックする[[gould2017]]。',
+     'フィードバックに目標設定と行動計画を組み込む[[fuller2012]][[luangasanatip2015]]。',
+     '部署別のABHR使用量（目標 20 L/1,000患者日以上）を併記し、観察による過大評価を補う[[srigley2014]]。'],
+    ['遵守率と医療関連感染（黄色ブドウ球菌菌血症、デバイス関連感染など）を並べて示す[[grayson2018]]。',
+     '遵守を妨げる要因とHAIの原因を構造的に評価し、経営層へ報告する（リーダーシップ基準）[[hhsaf2010]]。']
+  ],
+  4:[
+    ['5つのタイミング、手指消毒法、手洗い法のポスター（日本語版）を掲示する。費用は小さいが単独の効果は小さいため、他の要素と組み合わせる[[gould2017]]。'],
+    ['掲示をすべての病棟・処置エリアへ、手洗い法はすべてのシンクへ広げる。',
+     '2〜3か月毎の点検で、破損・劣化したポスターを貼り替える[[whoguide2009]]。'],
+    ['同じ掲示への慣れを防ぐため、職員参加でポスターを定期的に更新する。',
+     '電子カルテのログイン画面、バッジ、ステッカー、ディスペンサー周囲の視覚的なキューを活用する[[gould2017]]。'],
+    ['新しいリマインダーを開発し、効果を施設内で検証する（リーダーシップ基準）[[hhsaf2010]]。']
+  ],
+  5:[
+    ['院長・医療部門長・看護部長が、手指衛生の改善を支援することを全職員に向けて明確に表明する[[saint2010]][[dekraker2022]]。',
+     '手指衛生チームを設置し、責任者を決める[[storr2017]]。'],
+    ['チームの会議を月1回以上に定例化し、推進活動の時間を確保する。',
+     '5月5日の世界手指衛生デーを年間計画に組み込み、全体への周知に使う[[allegranzi2014]]。',
+     '各部署に手指衛生チャンピオンを指名する[[zingg2015]]。'],
+    ['施設の年間目標を設定し、達成度を評価する[[luangasanatip2015]]。',
+     'ロールモデル（特に医師・管理職）と新入職員のバディ制度で、規範を伝える[[lankford2003]]。',
+     '公正な文化に沿った個人の説明責任の仕組みを、職員と合意して導入する[[luangasanatip2015]]。'],
+    ['患者参加の正式なプログラムを導入する。ただし多角的戦略が確立した施設での上乗せ効果は小さい[[stewardson2016]]。',
+     '研究・学会発表、国や地域のキャンペーンへの協力、影響評価の将来計画への反映に取り組む（リーダーシップ基準）[[hhsaf2010]]。']
+  ]
+};
+
+const LEVEL_RECS = [
+  {head:'改善プログラムを立ち上げる',
+   steps:['経営層の承認を得て手指衛生改善プログラムを立ち上げ、責任者と手指衛生チームを決める（WHO実施ガイドのステップ1：施設の準備）[[whoguide2009]][[storr2017]]。',
+     'ベースライン評価を行う：病棟設備調査、ABHR消費量、訓練した観察者による直接観察、知識調査[[whoguide2009]][[sax2007]]。',
+     'ABHRを施設全体に継続供給し、ケアの現場への設置を最優先で進める[[who2009]][[pittet2000]][[glowicz2023]]。国内でも、手指衛生の徹底とそのための設備・備品の整備が求められている[[mhlw2014]]。',
+     '全職種に5つのタイミングと手技の基礎研修を行う[[allegranzi2013]]。']},
+  {head:'多角的戦略の5要素をそろえる',
+   steps:['観察とフィードバックの仕組みを確立する（観察者の訓練・検証 → 3か月毎の観察 → 即時・定期のフィードバック）[[ivers2012]][[gould2017]]。',
+     '研修を入職時必須と年1回の定期研修として制度化し、修了を確認する[[dekraker2022]]。',
+     '経営層のコミットメントを表明し、年間目標を設定する[[saint2010]][[luangasanatip2015]]。',
+     '5月5日のキャンペーンを活用して施設全体に周知する[[allegranzi2014]]。']},
+  {head:'改善を定着させる長期計画をつくる',
+   steps:['改善を維持する長期計画（年次の行動計画、目標、責任者、予算）を策定する。HHSAFは中級の施設に長期計画の策定を求めている[[hhsaf2010]][[whoguide2009]]。',
+     'フィードバックに目標設定と行動計画を組み込み、説明責任と報奨を加える[[fuller2012]][[luangasanatip2015]]。',
+     'チャンピオン、ロールモデル（特に医師）、バディ制度で文化を育てる[[zingg2015]][[lankford2003]]。',
+     '遵守率と医療関連感染の指標を並べて示し、観察値の過大評価を消費量で補う[[grayson2018]][[srigley2014]]。']},
+  {head:'安全文化として定着させ、リーダーシップへ',
+   steps:['リーダーシップ基準（20項目）に取り組む：HAIサーベイランスとの連動、障壁の構造化された評価、他施設への研修提供、研究・発表[[hhsaf2010]]。',
+     '停滞を防ぐ。2015年と2019年の両調査に参加した施設では得点の中央値が伸びておらず、資源・リーダーシップ・組織的支援が改善の鍵とされた[[dekraker2022]]。',
+     '患者参加の正式なプログラムを検討する（上乗せ効果は小さい）[[stewardson2016]]。',
+     '地域の連携施設（感染対策向上加算の合同カンファレンスなど）へ知見と教材を共有する。']}
+];
+
+const REFS = [
+  {key:'who2009', au:'World Health Organization', ti:'WHO Guidelines on Hand Hygiene in Health Care: First Global Patient Safety Challenge. Clean Care is Safer Care', so:'Geneva: WHO; 2009', url:'https://www.who.int/publications/i/item/9789241597906',
+   de:'ガイドライン', fi:'ABHRを日常的な手指衛生の第一選択とし、5要素からなる多角的戦略を推奨。石けんと流水による手洗いの適応、手袋の使用、皮膚ケアを示す。', use:'組織変革・教育の推奨、ABHRと石けんの位置づけ'},
+  {key:'hhsaf2010', au:'World Health Organization', ti:'Hand Hygiene Self-Assessment Framework 2010（日本語訳：市川高夫「手指衛生自己評価フレームワーク2010」）', so:'Geneva: WHO; 2010', url:'https://www.who.int/publications/m/item/hand-hygiene-self-assessment-framework-2010',
+   de:'評価ツール', fi:'5構成要素・27指標（各100点、計500点）で4段階のレベルを判定する。上級の施設には20項目のリーダーシップ基準を用意。', use:'設問・配点・レベル判定・リーダーシップ基準'},
+  {key:'whoguide2009', au:'World Health Organization', ti:'A Guide to the Implementation of the WHO Multimodal Hand Hygiene Improvement Strategy (WHO/IER/PSP/2009.02)', so:'Geneva: WHO; 2009', url:'https://iris.who.int/handle/10665/70030',
+   de:'実施ガイド', fi:'施設の準備→ベースライン評価→実施→フォローアップ評価→継続的な行動計画の5段階で多角的戦略を導入する。病棟インフラ調査、知識調査、観察フォームなどのツールを提供。', use:'レベル別の行動計画、設備監査・知識評価'},
+  {key:'storr2017', au:'Storr J, Twyman A, Zingg W, et al.', ti:'Core components for effective infection prevention and control programmes: new WHO evidence-based recommendations', so:'Antimicrob Resist Infect Control. 2017;6:6', doi:'10.1186/s13756-016-0149-9',
+   de:'WHOガイドライン（系統的レビューにもとづく推奨）', fi:'施設の感染対策プログラムのコアコンポーネント（訓練を受けた専任担当者、教育・訓練、サーベイランス、多角的戦略、監査とフィードバック、人員配置、環境・物品など）を推奨。', use:'トレーナー・チーム・人員確保の根拠'},
+  {key:'glowicz2023', au:'Glowicz JB, Landon E, Sickbert-Bennett EE, et al.', ti:'SHEA/IDSA/APIC Practice Recommendation: Strategies to prevent healthcare-associated infections through hand hygiene: 2022 Update', so:'Infect Control Hosp Epidemiol. 2023;44:355-76', doi:'10.1017/ice.2022.304',
+   de:'学会実践勧告', fi:'急性期病院向けに、ABHRの優先使用、動線に合わせたディスペンサー配置、遵守状況のモニタリングとフィードバック、皮膚ケアなどを実践すべき対策として整理。', use:'ABHR配置・モニタリングの推奨'},
+  {key:'mhlw2014', au:'厚生労働省医政局地域医療計画課長', ti:'医療機関における院内感染対策について（医政地発1219第1号）', so:'平成26年12月19日',
+   de:'行政通知', fi:'標準予防策としての手指衛生の徹底と、そのための設備・備品の整備など、医療機関が講じるべき院内感染対策の基本を示す。', use:'国内の制度的な位置づけ'},
+  {key:'pittet2000', au:'Pittet D, Hugonnet S, Harbarth S, et al.', ti:'Effectiveness of a hospital-wide programme to improve compliance with hand hygiene', so:'Lancet. 2000;356:1307-12', doi:'10.1016/S0140-6736(00)02814-2',
+   de:'準実験研究（ジュネーブ大学病院）', fi:'ABHRのベッドサイド導入とポスターなどを組み合わせた院内全体の推進で、遵守率48%→66%、医療関連感染の有病率16.9%→9.9%、MRSA伝播率2.16→0.93/10,000患者日。ABHR消費量は3.5→15.4 L/1,000患者日。', use:'ABHRと多角的戦略の効果、消費量指標'},
+  {key:'allegranzi2013', au:'Allegranzi B, Gayet-Ageron A, Damani N, et al.', ti:"Global implementation of WHO's multimodal strategy for improvement of hand hygiene: a quasi-experimental study", so:'Lancet Infect Dis. 2013;13:843-51', doi:'10.1016/S1473-3099(13)70163-4',
+   de:'準実験研究（5か国・43病院）', fi:'WHO戦略の導入で遵守率51.0%→67.2%（調整オッズ比2.15）、知識得点18.7→24.7。低・中所得国で効果が大きく、2年後も活動が続いていた。', use:'多角的戦略と教育の効果'},
+  {key:'luangasanatip2015', au:'Luangasanatip N, Hongsuwan M, Limmathurotsakul D, et al.', ti:'Comparative efficacy of interventions to promote hand hygiene in hospital: systematic review and network meta-analysis', so:'BMJ. 2015;351:h3728', doi:'10.1136/bmj.h3728',
+   de:'系統的レビュー・ネットワークメタ解析', fi:'WHO多角的戦略は遵守率の改善に有効で、目標設定・報奨・説明責任を加えるとさらに改善する。介入費用は1,000病床日あたり225〜4,669米ドル。', use:'目標設定・説明責任・フィードバックの効果'},
+  {key:'gould2017', au:'Gould DJ, Moralejo D, Drey N, Chudleigh JH, Taljaard M', ti:'Interventions to improve hand hygiene compliance in patient care', so:'Cochrane Database Syst Rev. 2017;9:CD005186', doi:'10.1002/14651858.CD005186.pub4',
+   de:'コクランレビュー（26研究）', fi:'パフォーマンスフィードバックは遵守率を改善しうる（確実性 低）、感染・保菌をわずかに減らす可能性が高い（中等度）。ABHRを使用場所の近くに置くと遵守率がわずかに改善する可能性が高い（中等度）。教育、掲示などのキューは確実性が低い。', use:'各介入の効果の大きさと確実性'},
+  {key:'ivers2012', au:'Ivers N, Jamtvedt G, Flottorp S, et al.', ti:'Audit and feedback: effects on professional practice and healthcare outcomes', so:'Cochrane Database Syst Rev. 2012;(6):CD000259', doi:'10.1002/14651858.CD000259.pub3',
+   de:'コクランレビュー（140 RCT）', fi:'監査とフィードバックで望ましい実践が中央値4.3ポイント増加。ベースラインが低い、同僚や上司から、繰り返し、口頭と書面の両方、明確な目標と行動計画を伴う場合に効果が大きい。', use:'フィードバックの設計'},
+  {key:'stewardson2016', au:'Stewardson AJ, Sax H, Gayet-Ageron A, et al.', ti:'Enhanced performance feedback and patient participation to improve hand hygiene compliance of health-care workers in the setting of established multimodal promotion: a single-centre, cluster randomised controlled trial', so:'Lancet Infect Dis. 2016;16:1345-55', doi:'10.1016/S1473-3099(16)30256-0',
+   de:'クラスターランダム化比較試験', fi:'多角的戦略が確立した病院で、対照と比べた遵守率の上乗せは強化フィードバックで3ポイント（p=0.19）、強化フィードバック＋患者参加で4ポイント（p=0.048）。', use:'患者参加・フィードバックの上乗せ効果'},
+  {key:'grayson2018', au:'Grayson ML, Stewardson AJ, Russo PL, et al.', ti:'Effects of the Australian National Hand Hygiene Initiative after 8 years on infection control practices, health-care worker education, and clinical outcomes: a longitudinal study', so:'Lancet Infect Dis. 2018;18:1269-77', doi:'10.1016/S1473-3099(18)30491-2',
+   de:'縦断研究（全国事業）', fi:'遵守率63.6%→84.3%。遵守率が10%上がるごとに医療関連黄色ブドウ球菌菌血症が15%減少（IRR 0.85）。オンライン学習の修了は約199万件、費用は入院1件あたり0.06豪ドル。', use:'観察・教育の体制、遵守率とHAIの関連'},
+  {key:'zingg2015', au:'Zingg W, Holmes A, Dettenkofer M, et al.', ti:'Hospital organisation, management, and structure for prevention of health-care-associated infection: a systematic review and expert consensus', so:'Lancet Infect Dis. 2015;15:212-24', doi:'10.1016/S1473-3099(14)70854-0',
+   de:'系統的レビュー＋専門家合意（92研究）', fi:'効果的な感染対策の10要素：病院レベルの組織化、病床稼働・人員配置、物品への容易なアクセスと人間工学、ガイドラインの適切な活用、教育・訓練、監査、サーベイランスとフィードバック、行動変容を含む多角的・多職種プログラム、チャンピオンの関与、前向きな組織文化。', use:'チーム・チャンピオン・監査・組織文化'},
+  {key:'lotfinejad2021', au:'Lotfinejad N, Peters A, Tartari E, et al.', ti:'Hand hygiene in health care: 20 years of ongoing advances and perspectives', so:'Lancet Infect Dis. 2021;21:e209-21', doi:'10.1016/S1473-3099(21)00383-2',
+   de:'レビュー', fi:'ABHRによる手指衛生を医療関連感染予防の最も有効な戦略と位置づけ、WHO多角的戦略の世界的な導入が行動変容とHAI・耐性菌伝播の減少に寄与したと総括。資源と社会文化に合わせた適応が必要とする。', use:'全体の背景'},
+  {key:'dekraker2022', au:'de Kraker MEA, Tartari E, Tomczyk S, et al.', ti:'Implementation of hand hygiene in health-care facilities: results from the WHO Hand Hygiene Self-Assessment Framework global survey 2019', so:'Lancet Infect Dis. 2022;22:835-44', doi:'10.1016/S1473-3099(21)00618-6',
+   de:'国際横断調査（90か国・3,206施設）', fi:'HHSAF中央値350点（中級）。組織変革が最も高く（85点）、組織の安全風土が最も低い（55点）。国の所得水準と施設の財源が得点の規定因子。2015〜2019年に両調査に参加した施設の中央値は横ばい。', use:'ベンチマーク、予算・リーダーシップの重要性'},
+  {key:'sonpar2025', au:'Sonpar A, et al.', ti:'Multimodal strategies for the implementation of infection prevention and control (IPC) interventions: update of a systematic review for the WHO guidelines on core components of IPC programmes at the facility level', so:'Clin Microbiol Infect. 2025', url:'https://consensus.app/papers/details/d43356f04cab5ed7a3a417028998ec7c/',
+   de:'系統的レビュー（27研究）', fi:'多角的戦略を用いた研究の多く（27件中20件）で、HAIの有意な減少または手指衛生の改善を認めた。ただしエビデンスの質は低〜中等度。', use:'多角的戦略のエビデンスの確実性'},
+  {key:'nyawere2026', au:'Nyawere E, et al.', ti:'World Health Organization Multimodal Improvement Strategy for Hand Hygiene', so:'JAMA Netw Open. 2026', url:'https://consensus.app/papers/details/d51b4919442f5c988a2a75ae1429f5bc/',
+   de:'ステップウェッジ型クラスターランダム化試験（ウガンダ・8施設）', fi:'院内製造のABHRを用いたWHO戦略で遵守率22.1%→79.2%、介入終了後の追跡期も72.7%を維持。HHSAFの中央値は145点→383.75点に上昇。', use:'HHSAF得点の改善可能性'},
+  {key:'stone2012', au:'Stone SP, Fuller C, Savage J, et al.', ti:'Evaluation of the national Cleanyourhands campaign to reduce Staphylococcus aureus bacteraemia and Clostridium difficile infection in hospitals in England and Wales by improved hand hygiene: four year, prospective, ecological, interrupted time series study', so:'BMJ. 2012;344:e3005', doi:'10.1136/bmj.e3005',
+   de:'前向き生態学的・分割時系列研究', fi:'手指衛生製品の調達量が約3倍に増加。石けん調達量の増加はC. difficile感染の減少と、ABHR調達量の増加は（後半期に）MRSA菌血症の減少と独立して関連。', use:'石けんの常備、全国キャンペーン'},
+  {key:'srigley2014', au:'Srigley JA, Furness CD, Baker GR, Gardam M', ti:'Quantification of the Hawthorne effect in hand hygiene compliance monitoring using an electronic monitoring system: a retrospective cohort study', so:'BMJ Qual Saf. 2014;23:974-80', doi:'10.1136/bmjqs-2014-003080',
+   de:'後ろ向きコホート研究（電子モニタリング）', fi:'監査者が見える場所では、見えない場所に比べて手指衛生の実施率が約3倍高かった（Hawthorne効果）。', use:'観察値の解釈、消費量の併用'},
+  {key:'fuller2012', au:'Fuller C, Michie S, Savage J, et al.', ti:'The Feedback Intervention Trial (FIT) — improving hand-hygiene compliance in UK healthcare workers: a stepped wedge cluster randomised controlled trial', so:'PLoS One. 2012;7:e41617', doi:'10.1371/journal.pone.0041617',
+   de:'ステップウェッジ型クラスターランダム化試験（英国のICU・急性期病棟）', fi:'観察結果のフィードバックに、目標設定と行動計画を組み合わせた介入。計画どおりに実施された病棟で遵守率が改善した。', use:'フィードバックの設計（目標・行動計画）'},
+  {key:'saint2010', au:'Saint S, Kowalski CP, Banaszak-Holl J, et al.', ti:'The importance of leadership in preventing healthcare-associated infection: results of a multisite qualitative study', so:'Infect Control Hosp Epidemiol. 2010;31:901-7', doi:'10.1086/655459',
+   de:'多施設質的研究', fi:'HAI予防に成果を上げている病院のリーダーは、臨床の卓越性を重んじる文化を育て、障壁に正面から取り組み、職員を鼓舞していた。', use:'経営層のコミットメント'},
+  {key:'sax2007', au:'Sax H, Allegranzi B, Uçkay I, et al.', ti:"'My five moments for hand hygiene': a user-centred design approach to understand, train, monitor and report hand hygiene", so:'J Hosp Infect. 2007;67:9-21', doi:'10.1016/j.jhin.2007.06.004',
+   de:'概念・方法論', fi:'手指衛生の5つのタイミングを、理解・研修・観察・報告を統一する枠組みとして提示した。', use:'研修内容と観察方法'},
+  {key:'lankford2003', au:'Lankford MG, Zembower TR, Trick WE, et al.', ti:'Influence of role models and hospital design on hand hygiene of healthcare workers', so:'Emerg Infect Dis. 2003;9:217-23', doi:'10.3201/eid0902.020249',
+   de:'観察研究', fi:'同室の上位職が手指衛生を行わない場面では、他の職員の遵守率も低下した。シンクを増やした新しい病棟への移転でも遵守率は改善しなかった。', use:'ロールモデル、バディ制度、シンク増設の位置づけ'},
+  {key:'sakihama2016', au:'Sakihama T, Honda H, Saint S, et al.', ti:'Hand hygiene adherence among health care workers at Japanese hospitals: a multicenter observational study in Japan', so:'J Patient Saf. 2016;12:11-7',
+   de:'多施設観察研究（日本の教育病院4施設）', fi:'患者接触前の手指衛生遵守率は19%（医師15%、看護師23%）と低い。', use:'国内の現状、医師のロールモデル'},
+  {key:'mcguckin2013', au:'McGuckin M, Govednik J', ti:'Patient empowerment and hand hygiene, 1997-2012', so:'J Hosp Infect. 2013;84:191-9',
+   de:'レビュー', fi:'多くの患者は医療従事者に手指衛生を確かめる意思を持つが、職員側からの許可や奨励が参加を後押しする。', use:'患者への情報提供'},
+  {key:'tartari2019', au:'Tartari E, Fankhauser C, Masson-Roy S, et al.', ti:'Train-the-Trainers in hand hygiene: a standardized approach to guide education in infection prevention and control', so:'Antimicrob Resist Infect Control. 2019;8:206',
+   de:'教育プログラム報告', fi:'手指衛生の指導者を養成する標準化プログラム（Train-the-Trainers）の構成と実施経験を報告。', use:'トレーナーと観察者の育成'},
+  {key:'allegranzi2014', au:'Allegranzi B, Conway L, Larson E, Pittet D', ti:'Status of the implementation of the World Health Organization multimodal hand hygiene strategy in United States of America health care facilities', so:'Am J Infect Control. 2014;42:224-30',
+   de:'横断調査（米国129施設）', fi:'感染対策担当者が100床あたり0.75人を超える施設はHHSAF得点が36点高く、手指衛生キャンペーンに参加する施設は41点高かった。', use:'人員配置、キャンペーン参加'},
+  {key:'stewardson2013', au:'Stewardson A, Allegranzi B, Perneger TV, Attar H, Pittet D', ti:'Testing the WHO Hand Hygiene Self-Assessment Framework for usability and reliability', so:'J Hosp Infect. 2013;83:30-5',
+   de:'使用性・信頼性の検証研究', fi:'27指標を選定し、使いやすさを確認。総得点と各構成要素の信頼性係数は0.54〜0.86。', use:'HHSAFの信頼性'},
+  {key:'kilpatrick2018', au:'Kilpatrick C, Tartari E, Gayet-Ageron A, et al.', ti:'Global hand hygiene improvement progress: two surveys using the WHO Hand Hygiene Self-Assessment Framework', so:'J Hosp Infect. 2018;100:202-6',
+   de:'国際調査（2011年2,119施設、2015年807施設）', fi:'両調査に参加した86施設の得点は335.1点→374.4点に有意に上昇した。', use:'繰り返し評価の意義'}
+];
+
+const BENCHMARK = '2019年WHO世界調査（90か国・3,206施設）の中央値：総合350点、組織変革85点（最高）、組織の安全風土55点（最低）[[dekraker2022]]';
+
+const SAMPLE = {
+  meta:{facility:'サンプル病院（架空・400床）', date:'2026-09-01', assessor:'感染対策室'},
+  ans:{'1.1':4,'1.2':1,'1.3':1,'1.4':1,'1.5':1,'1.6':1,'1.7':1,
+       '2.1a':2,'2.1b':0,'2.2a':1,'2.2b':0,'2.2c':1,'2.2d':0,'2.3':1,'2.4':1,'2.5':0,
+       '3.1':1,'3.2a':1,'3.2b':1,'3.3a':1,'3.3b':0,'3.3c':0,'g3.4':1,'3.4a':2,'3.4b':1,'3.5a':1,'3.5b-i':1,'3.5b-ii':0,
+       '4.1a':2,'4.1b':2,'4.1c':2,'4.2':1,'4.3':0,'4.4':0,'4.5':1,
+       '5.1a':1,'5.1b':1,'5.1c':0,'5.2a':0,'5.2b':0,'5.2c':1,'5.3':1,'5.4a':1,'5.4b':0,'5.5a':1,'5.5b':0,
+       '5.6a':1,'5.6b':0,'5.6c':0,'5.6d':1,'5.6e':0,'5.6f':0},
+  lead:{},
+  prev:{label:'サンプル前回（2025年度）', comp:[70,25,35,55,30]}
+};
+/* DATA:END */
+</script>
+
+<script>
+(function(){
+'use strict';
+document.documentElement.lang = 'ja';
+
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => { const r = Math.round(n * 10) / 10; return Number.isInteger(r) ? String(r) : r.toFixed(1); };
+const QMAP = Object.fromEntries(QUESTIONS.map(q => [q.id, q]));
+const REFNUM = Object.fromEntries(REFS.map((r, i) => [r.key, i + 1]));
+const cite = s => s.replace(/\[\[([a-z0-9]+)\]\]/g, (m, k) => REFNUM[k] ? `<a class="cite" href="#ref-${REFNUM[k]}">[${REFNUM[k]}]</a>` : '');
+const qmax = q => Math.max.apply(null, q.o.map(o => o[1]));
+const framed = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+
+/* ---------- scoring ---------- */
+const SC_IDS = ['1.1','1.2','1.3','1.4','1.5','1.6'];
+function rawPts(id, ans){ const q = QMAP[id], i = ans[id]; return (i == null || !q.o[i]) ? 0 : q.o[i][1]; }
+function scBaseOK(ans){ return SC_IDS.reduce((a, id) => a + rawPts(id, ans), 0) < 100; }
+function enabled(q, ans){
+  if (q.cond === 'sc') return scBaseOK(ans);
+  if (q.cond === 'gate') return ans['g3.4'] === 1;
+  return true;
+}
+function pts(q, ans){ return enabled(q, ans) ? rawPts(q.id, ans) : 0; }
+window.pointsOf = (id, ans) => pts(QMAP[id], ans);
+
+function levelOf(total){
+  if (total >= 376) return LEVELS[3];
+  if (total >= 251) return LEVELS[2];
+  if (total >= 126) return LEVELS[1];
+  return LEVELS[0];
+}
+const bandOf = s => s <= 25 ? 0 : s <= 50 ? 1 : s <= 75 ? 2 : 3;
+
+function compute(ans, lead){
+  const comp = [0,0,0,0,0], ansd = [0,0,0,0,0], appl = [0,0,0,0,0];
+  for (const q of QUESTIONS){
+    const en = enabled(q, ans);
+    if (en){ appl[q.c-1]++; if (ans[q.id] != null) ansd[q.c-1]++; }
+    comp[q.c-1] += pts(q, ans);
+  }
+  for (let i = 0; i < 5; i++) comp[i] = Math.min(100, comp[i]);
+  const total = comp.reduce((a, b) => a + b, 0);
+  const level = levelOf(total);
+  const per = [0,0,0,0,0]; let count = 0;
+  for (const L of LEADERSHIP){ if (lead[L.id] === true){ per[L.c-1]++; count++; } }
+  const eligible = level.idx === 3;
+  return {comp, total, level, ansd, appl,
+    answered: ansd.reduce((a,b)=>a+b,0), applicable: appl.reduce((a,b)=>a+b,0),
+    lead:{count, per, eligible, achieved: eligible && count >= 12 && per.every(x => x >= 1)}};
+}
+
+/* ---------- actions ---------- */
+function easeOf(a, ans){ return typeof a.ease === 'function' ? a.ease(ans) : a.ease; }
+function tierOf(i, e){ if (i >= 4 && e >= 4) return 'qw'; if (i >= 4) return 'major'; if (e >= 4) return 'fill'; return 'later'; }
+function evalAction(a, ans){
+  let gain = 0, unanswered = false; const unmet = [], steps = [];
+  const scored = a.qs.filter(id => !QMAP[id].gate);
+  for (const id of scored){
+    const q = QMAP[id];
+    if (q.cond === 'sc' && !scBaseOK(ans)) continue;
+    const cur = pts(q, ans), mx = qmax(q);
+    if (ans[id] == null) unanswered = true;
+    if (cur >= mx) continue;
+    gain += mx - cur;
+    unmet.push(id);
+    const curLabel = ans[id] == null ? '未回答' : enabled(q, ans) ? q.o[ans[id]][0] : '0点（回答条件を満たさない）';
+    const higher = q.o.filter(o => o[1] > cur).sort((x, y) => x[1] - y[1])[0];
+    const next = q.o.length > 2 ? `次の段階「${higher[0]}」` : `「${higher[0]}」`;
+    steps.push(`${scored.length > 1 ? id + '：' : ''}現状「${curLabel}」→ ${next}（+${fmt(higher[1] - cur)}点）`);
+  }
+  if (a.qs.includes('g3.4') && ans['g3.4'] == null) unanswered = true;
+  let stepText = steps.join('／');
+  if (a.qs.includes('g3.4') && ans['g3.4'] !== 1){
+    stepText = 'まず3.4の回答条件（観察者の訓練・検証と、5つのタイミングにもとづく観察方法）を満たす。' + stepText;
+  }
+  const impact = a.impact, ease = easeOf(a, ans);
+  return {a, gain, unanswered, unmet, stepText, impact, ease, score: impact * ease, tier: tierOf(impact, ease)};
+}
+
+/* ---------- storage ---------- */
+const K_DRAFT = 'hhsaf2010.draft.v1', K_HIST = 'hhsaf2010.history.v1', K_UI = 'hhsaf2010.ui.v1';
+function lsGet(k){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } }
+function lsSet(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+
+function cleanAns(src){
+  const out = {};
+  if (!src || typeof src !== 'object') return out;
+  for (const q of QUESTIONS){
+    const v = src[q.id];
+    if (Number.isInteger(v) && v >= 0 && v < q.o.length) out[q.id] = v;
+  }
+  return out;
+}
+function cleanLead(src){
+  const out = {};
+  if (!src || typeof src !== 'object') return out;
+  for (const L of LEADERSHIP) if (src[L.id] === true) out[L.id] = true;
+  return out;
+}
+function cleanMeta(m){
+  m = m && typeof m === 'object' ? m : {};
+  return {facility: String(m.facility || '').slice(0, 120), date: /^\d{4}-\d{2}-\d{2}$/.test(m.date || '') ? m.date : '', assessor: String(m.assessor || '').slice(0, 120)};
+}
+function sampleState(){ return {meta: {...SAMPLE.meta}, ans: {...SAMPLE.ans}, lead: {...SAMPLE.lead}, sample: true}; }
+function blankState(){ return {meta: {facility:'', date: today(), assessor:''}, ans: {}, lead: {}, sample: false}; }
+
+let state = (() => {
+  const d = lsGet(K_DRAFT);
+  if (d && d.ans) return {meta: cleanMeta(d.meta), ans: cleanAns(d.ans), lead: cleanLead(d.lead), sample: !!d.sample};
+  return sampleState();
+})();
+let history = (() => { const h = lsGet(K_HIST); return Array.isArray(h) ? h.filter(x => x && x.id && Array.isArray(x.comp)) : []; })();
+const savedUi = lsGet(K_UI) || {};
+let ui = {tab: savedUi.tab || '1', sort: savedUi.sort || 'priority', comp: 'all', inclUn: true,
+  compare: state.sample ? 'sample-prev' : (history[0] ? history[0].id : '')};
+
+let saveTimer = null;
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => { lsSet(K_DRAFT, state); lsSet(K_UI, {tab: ui.tab, sort: ui.sort}); }, 250);
+}
+
+/* ---------- toast ---------- */
+let toastTimer = null;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.textContent = ''; }, 5000);
+}
+function arm(btn, label, fn){
+  if (btn.dataset.armed === '1'){
+    clearTimeout(btn._t); btn.dataset.armed = ''; btn.textContent = btn.dataset.label; fn(); return;
+  }
+  btn.dataset.label = btn.textContent; btn.dataset.armed = '1'; btn.textContent = label;
+  btn._t = setTimeout(() => { btn.dataset.armed = ''; btn.textContent = btn.dataset.label; }, 4000);
+}
+
+/* ---------- form ---------- */
+function optHTML(q, o, i){
+  const p = q.gate ? '' : (o[1] ? '+' + fmt(o[1]) : '0');
+  return `<label class="opt" for="q_${q.id}_${i}"><input type="radio" name="q_${q.id}" id="q_${q.id}_${i}" value="${i}" data-q="${q.id}"><span class="opt-label">${o[0]}</span><span class="opt-pts">${p}</span></label>`;
+}
+function qHTML(q){
+  const yn = q.o.length === 2;
+  const sub = q.g ? ' q-sub' : '';
+  return `<div class="q${sub}${q.gate ? ' q-gate' : ''}" id="qrow-${q.id}">
+    <div class="q-head"><span class="q-id">${q.gate ? '回答条件' : q.id}</span><p class="q-text" id="qt-${q.id}">${q.t}</p><span class="q-pts" data-qpts="${q.id}"></span></div>
+    ${q.n ? `<details class="q-note"><summary>用語と判定のめやす</summary><p>${q.n}</p></details>` : ''}
+    <p class="q-cond" data-qcond="${q.id}" hidden></p>
+    <div class="opts ${yn ? 'opts-yn' : ''}" role="radiogroup" aria-labelledby="qt-${q.id}">${q.o.map((o, i) => optHTML(q, o, i)).join('')}</div>
+  </div>`;
+}
+function renderForm(){
+  const tabs = COMPONENTS.map(c => `<button type="button" role="tab" class="tab" id="tab-${c.no}" data-tab="${c.no}" aria-controls="panel-${c.no}">
+      <span class="tab-no">${c.no}</span><span class="tab-name">${c.name}</span>
+      <span class="tab-score"><span class="num" data-tabscore="${c.no}">0</span><span class="tab-meter"><i data-tabmeter="${c.no}"></i></span></span></button>`).join('')
+    + `<button type="button" role="tab" class="tab" id="tab-L" data-tab="L" aria-controls="panel-L">
+      <span class="tab-no">L</span><span class="tab-name">リーダーシップ基準</span>
+      <span class="tab-score"><span class="num" data-tabscore="L">0</span>/20</span></button>`;
+  $('#tabs').innerHTML = tabs;
+
+  let html = '';
+  for (const c of COMPONENTS){
+    const seen = new Set();
+    const qs = QUESTIONS.filter(q => q.c === c.no).map(q => {
+      let pre = '';
+      if (q.g && !seen.has(q.g) && GROUPS[q.g]){
+        seen.add(q.g);
+        pre = `<div class="q-group"><span class="q-id">${q.g}</span><span>${GROUPS[q.g]}</span></div>`;
+      }
+      return pre + qHTML(q);
+    }).join('');
+    html += `<section class="tabpanel" role="tabpanel" id="panel-${c.no}" aria-labelledby="tab-${c.no}" hidden>
+      <header class="panel-head"><h2>${c.no}. ${c.name}<span class="en">${c.en}</span></h2><p>${c.desc}</p></header>${qs}</section>`;
+  }
+  const leadGroups = COMPONENTS.map(c => `<div class="lead-group"><h3>${c.no}. ${c.name}</h3>${
+    LEADERSHIP.filter(L => L.c === c.no).map(L => `<label class="lead-item" for="lead_${L.id}"><input type="checkbox" id="lead_${L.id}" data-lead="${L.id}"><span>${L.t}</span></label>`).join('')}</div>`).join('');
+  html += `<section class="tabpanel" role="tabpanel" id="panel-L" aria-labelledby="tab-L" hidden>
+    <header class="panel-head"><h2>リーダーシップ基準<span class="en">Leadership criteria</span></h2>
+    <p>総合スコアが上級（376点以上）の施設が評価します。各構成要素で1項目以上「はい」かつ、20項目中12項目以上「はい」の場合に「手指衛生リーダーシップ」レベルと判定します。</p></header>
+    <p class="lead-note" id="leadNote"></p>${leadGroups}
+    <p class="lead-note">日本語訳版の判定文は「各カテゴリー1項目以上、または合計12項目以上」と読める表記ですが、WHO英語版原典と国際調査の運用に合わせ、両方の条件を満たす場合に判定しています。</p></section>`;
+  $('#panels').innerHTML = html;
+}
+function syncInputs(){
+  document.querySelectorAll('#panels input[type=radio]').forEach(r => { r.checked = false; });
+  for (const [id, i] of Object.entries(state.ans)){
+    const el = document.getElementById(`q_${id}_${i}`); if (el) el.checked = true;
+  }
+  for (const L of LEADERSHIP){ const el = document.getElementById(`lead_${L.id}`); if (el) el.checked = state.lead[L.id] === true; }
+  $('#fFacility').value = state.meta.facility || '';
+  $('#fDate').value = state.meta.date || '';
+  $('#fAssessor').value = state.meta.assessor || '';
+}
+function selectTab(t){
+  ui.tab = String(t);
+  document.querySelectorAll('#tabs .tab').forEach(b => { const on = b.dataset.tab === ui.tab; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1; });
+  document.querySelectorAll('#panels .tabpanel').forEach(p => { p.hidden = p.id !== `panel-${ui.tab}`; });
+  persist();
+}
+function updateForm(r){
+  for (const q of QUESTIONS){
+    const en = enabled(q, state.ans);
+    const row = document.getElementById(`qrow-${q.id}`);
+    row.classList.toggle('is-off', !en);
+    row.querySelectorAll('input').forEach(inp => { inp.disabled = !en; });
+    const cond = row.querySelector('[data-qcond]');
+    if (!en){
+      cond.hidden = false;
+      cond.textContent = q.cond === 'sc' ? '1.1〜1.6の合計が100点のため、この設問は回答不要です。'
+        : '3.4の回答条件が「はい」のときに回答します。現在は0点として計算しています。';
+    } else cond.hidden = true;
+    const p = row.querySelector('[data-qpts]');
+    p.innerHTML = q.gate ? '' : `<b>${fmt(pts(q, state.ans))}</b> / ${fmt(qmax(q))}`;
+  }
+  for (let i = 0; i < 5; i++){
+    document.querySelector(`[data-tabscore="${i+1}"]`).textContent = fmt(r.comp[i]);
+    document.querySelector(`[data-tabmeter="${i+1}"]`).style.width = r.comp[i] + '%';
+  }
+  document.querySelector('[data-tabscore="L"]').textContent = r.lead.count;
+  $('#leadNote').textContent = r.lead.eligible
+    ? `現在の総合スコアは上級です。「はい」${r.lead.count}項目（構成要素別 ${r.lead.per.join('・')}）。${r.lead.achieved ? 'リーダーシップレベルの条件を満たしています。' : '条件：合計12項目以上、かつ各構成要素で1項目以上。'}`
+    : `現在の総合スコアは${fmt(r.total)}点（${r.level.name}）です。上級（376点以上）に到達すると判定に使われます。回答しておくことはできます。`;
+}
+
+/* ---------- results ---------- */
+function lvlChip(level){ return `<span class="lvl lvl-${level.idx}"><i aria-hidden="true"></i>${level.name}</span>`; }
+function bandChip(s){ const b = bandOf(s); return `<span class="lvl lvl-${b}"><i aria-hidden="true"></i>${LEVELS[b].name}</span>`; }
+
+function compareData(){
+  if (ui.compare === 'sample-prev' && state.sample) return {label: SAMPLE.prev.label, comp: SAMPLE.prev.comp};
+  const h = history.find(x => x.id === ui.compare);
+  return h ? {label: histLabel(h), comp: h.comp} : null;
+}
+function histLabel(h){ return `${h.meta && h.meta.date ? h.meta.date : String(h.savedAt || '').slice(0, 10)} ${h.meta && h.meta.facility ? h.meta.facility : ''}（${fmt(h.total)}点）`.trim(); }
+
+function renderCompareSelect(){
+  const opts = [`<option value="">比較なし</option>`];
+  if (state.sample) opts.push(`<option value="sample-prev">${esc(SAMPLE.prev.label)}</option>`);
+  for (const h of history) opts.push(`<option value="${esc(h.id)}">${esc(histLabel(h))}</option>`);
+  const sel = $('#cmpSel'); sel.innerHTML = opts.join('');
+  if (![...sel.options].some(o => o.value === ui.compare)) ui.compare = '';
+  sel.value = ui.compare;
+}
+
+function radarSVG(cur, cmp){
+  const W = 440, H = 352, cx = 220, cy = 176, R = 122;
+  const ang = i => (-90 + i * 72) * Math.PI / 180;
+  const P = (i, v) => [cx + R * v / 100 * Math.cos(ang(i)), cy + R * v / 100 * Math.sin(ang(i))];
+  const poly = vals => vals.map((v, i) => P(i, v).map(n => n.toFixed(1)).join(',')).join(' ');
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="radarTitle radarDesc"><title id="radarTitle">構成要素別スコアのレーダーチャート</title><desc id="radarDesc">${COMPONENTS.map((c, i) => `${c.name} ${fmt(cur[i])}点`).join('、')}${cmp ? '。比較：' + cmp.comp.map((v, i) => `${COMPONENTS[i].name} ${fmt(v)}点`).join('、') : ''}</desc>`;
+  for (const v of [25, 50, 75, 100]) s += `<polygon class="rd-ring${v === 100 ? ' rd-ring-outer' : ''}" points="${poly([v,v,v,v,v])}"/>`;
+  for (let i = 0; i < 5; i++){ const [x, y] = P(i, 100); s += `<line class="rd-spoke" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/>`; }
+  /* 目盛りは頂点の並ぶ軸を避け、軸1と軸2の中間（五角形の辺の中点）に置く */
+  const tickA = -54 * Math.PI / 180, edge = Math.cos(36 * Math.PI / 180);
+  for (const v of [25, 50, 75, 100]){
+    const rr = R * v / 100 * edge;
+    s += `<text class="rd-tick" x="${(cx + rr * Math.cos(tickA) + 3).toFixed(1)}" y="${(cy + rr * Math.sin(tickA) - 3).toFixed(1)}">${v}</text>`;
+  }
+  if (cmp){
+    s += `<polygon class="rd-cmp" points="${poly(cmp.comp)}"/>`;
+    cmp.comp.forEach((v, i) => { const [x, y] = P(i, v); s += `<rect class="rd-dot-cmp" x="${(x - 3.5).toFixed(1)}" y="${(y - 3.5).toFixed(1)}" width="7" height="7"/>`; });
+  }
+  s += `<polygon class="rd-cur" points="${poly(cur)}"/>`;
+  cur.forEach((v, i) => { const [x, y] = P(i, v); s += `<circle class="rd-dot" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.5"/>`; });
+  COMPONENTS.forEach((c, i) => {
+    const a = ang(i), lx = cx + (R + 18) * Math.cos(a), ly = cy + (R + 18) * Math.sin(a);
+    const cos = Math.cos(a), anchor = Math.abs(cos) < 0.2 ? 'middle' : cos > 0 ? 'start' : 'end';
+    const lines = c.radar.map(t => ({t, cls:'rd-label'})).concat([{t: fmt(cur[i]), cls:'rd-val'}]);
+    const lh = 15, n = lines.length;
+    let y0;
+    if (i === 0) y0 = ly - (n - 1) * lh;
+    else if (i === 2 || i === 3) y0 = ly + 14;
+    else y0 = ly - (n - 1) * lh / 2 + 4;
+    s += `<g aria-hidden="true">` + lines.map((l, k) => `<text class="${l.cls}" x="${lx.toFixed(1)}" y="${(y0 + k * lh).toFixed(1)}" text-anchor="${anchor}">${l.t}</text>`).join('') + `</g>`;
+  });
+  cur.forEach((v, i) => { const [x, y] = P(i, v); s += `<circle class="rd-hit" data-i="${i}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="16" tabindex="0" aria-label="${COMPONENTS[i].name} ${fmt(v)}点"/>`; });
+  return s + '</svg>';
+}
+
+let lastResult = null;
+function renderResults(r){
+  $('#liveScore').innerHTML = `${fmt(r.total)}<small>/500</small>`;
+  $('#liveLevel').innerHTML = lvlChip(r.level);
+  $('#rTotal').textContent = fmt(r.total);
+  $('#rLevel').innerHTML = `${lvlChip(r.level)}<span class="lvl-en">${r.level.en}・${r.level.min}〜${r.level.max}点</span>`;
+  $('#rLevelDesc').textContent = r.level.desc;
+  $('#rMark').style.left = (r.total / 500 * 100) + '%';
+  $('#rProgress').textContent = `回答済み ${r.answered} / ${r.applicable} 設問（未回答は0点として計算）`;
+  $('#rLead').textContent = r.lead.eligible
+    ? (r.lead.achieved ? `リーダーシップ基準：${r.lead.count}/20項目 — 手指衛生リーダーシップレベルに到達` : `リーダーシップ基準：${r.lead.count}/20項目 — 到達条件は12項目以上かつ各構成要素1項目以上`)
+    : 'リーダーシップ基準：上級（376点以上）に到達すると評価対象になります';
+
+  const cmp = compareData();
+  $('#radarWrap').innerHTML = radarSVG(r.comp, cmp) + '<div class="tip" id="tip" hidden></div>';
+  $('#legend').innerHTML = `<span><i class="sw"></i>今回の評価</span>` + (cmp ? `<span><i class="sw sw-cmp"></i>${esc(cmp.label)}</span>` : '');
+  $('#ctDeltaHead').textContent = cmp ? '比較差' : '';
+  $('#ctable tbody').innerHTML = COMPONENTS.map((c, i) => {
+    const d = cmp ? r.comp[i] - cmp.comp[i] : null;
+    const dTxt = d == null ? '' : d > 0 ? `▲ +${fmt(d)}` : d < 0 ? `▼ ${fmt(d)}` : '±0';
+    return `<tr><td class="c-name"><b>${c.no}</b>${c.name}</td>
+      <td><div class="cbar" aria-hidden="true"><i style="width:${r.comp[i]}%"></i><em style="left:25%"></em><em style="left:50%"></em><em style="left:75%"></em></div></td>
+      <td class="c-score">${fmt(r.comp[i])}</td><td class="c-delta">${dTxt}</td></tr>`;
+  }).join('');
+  $('#bench').innerHTML = cite(BENCHMARK);
+  bindRadarTips(r, cmp);
+}
+function bindRadarTips(r, cmp){
+  const wrap = $('#radarWrap'), tip = $('#tip'), svg = wrap.querySelector('svg');
+  const show = el => {
+    const i = +el.dataset.i, c = COMPONENTS[i];
+    const box = svg.getBoundingClientRect(), wb = wrap.getBoundingClientRect(), sc = box.width / 440;
+    tip.innerHTML = `${c.name}<br><b>${fmt(r.comp[i])}</b> / 100　${LEVELS[bandOf(r.comp[i])].name}` + (cmp ? `<br>比較：${fmt(cmp.comp[i])}` : '');
+    tip.style.left = (box.left - wb.left + (+el.getAttribute('cx')) * sc) + 'px';
+    tip.style.top = (box.top - wb.top + (+el.getAttribute('cy')) * sc) + 'px';
+    tip.hidden = false;
+  };
+  wrap.querySelectorAll('.rd-hit').forEach(el => {
+    el.addEventListener('pointerenter', () => show(el));
+    el.addEventListener('focus', () => show(el));
+    el.addEventListener('pointerleave', () => { tip.hidden = true; });
+    el.addEventListener('blur', () => { tip.hidden = true; });
+  });
+}
+
+/* ---------- priority ---------- */
+function pips(n, label){ let s = `<span class="pips" role="img" aria-label="${label} 5段階中${n}">`; for (let i = 1; i <= 5; i++) s += `<i class="${i <= n ? 'on' : ''}"></i>`; return s + '</span>'; }
+function sortedActions(){
+  let list = ACTIONS.map(a => evalAction(a, state.ans)).filter(x => x.gain > 0);
+  if (!ui.inclUn) list = list.filter(x => !x.unanswered);
+  const byPriority = (x, y) => y.score - x.score || y.impact - x.impact || y.gain - x.gain || x.a.id.localeCompare(y.a.id);
+  list.sort(byPriority);
+  list.forEach((x, i) => { x.rank = i + 1; });
+  if (ui.sort === 'gain') list.sort((x, y) => y.gain - x.gain || byPriority(x, y));
+  if (ui.sort === 'comp') list.sort((x, y) => x.a.c - y.a.c || x.a.id.localeCompare(y.a.id));
+  return list;
+}
+function renderPriority(){
+  const all = sortedActions();
+  const list = ui.comp === 'all' ? all : all.filter(x => String(x.a.c) === ui.comp);
+  const counts = {qw:0, major:0, fill:0, later:0}; let gainSum = 0;
+  for (const x of all){ counts[x.tier]++; gainSum += x.gain; }
+  $('#tierSum').innerHTML = Object.keys(TIERS).map(k => `<span>${TIERS[k].label}<b>${counts[k]}</b>件</span>`).join('')
+    + `<span>すべて実施すると HHSAF<b>+${fmt(gainSum)}</b>点</span>`;
+
+  const cells = {};
+  for (const x of all) (cells[x.impact + '-' + x.ease] = cells[x.impact + '-' + x.ease] || []).push(x);
+  let m = '';
+  for (let i = 5; i >= 1; i--){
+    m += `<div class="mx-ax">${i}</div>`;
+    for (let e = 1; e <= 5; e++){
+      const items = (cells[i + '-' + e] || []).sort((p, q) => p.rank - q.rank);
+      m += `<div class="mx-cell${i >= 4 && e >= 4 ? ' qw' : ''}">${items.map(x => `<a class="chip t-${x.tier}" href="#act-${x.a.id}" title="${x.rank}. ${esc(x.a.title)}" aria-label="${x.rank}位 ${esc(x.a.title)}">${x.rank}</a>`).join('')}</div>`;
+    }
+  }
+  m += `<div></div>` + [1,2,3,4,5].map(e => `<div class="mx-ax">${e}</div>`).join('');
+  $('#matrix').innerHTML = m;
+
+  if (!list.length){
+    $('#acts').innerHTML = `<div class="panel empty">${all.length ? 'この構成要素に未達の設問はありません。' : 'すべての設問が満点です。リーダーシップ基準と、改善の維持に取り組んでください。'}</div>`;
+    return;
+  }
+  $('#acts').innerHTML = list.map(x => {
+    const c = COMPONENTS[x.a.c - 1];
+    const qs = x.a.qs.filter(id => !QMAP[id].gate).join('・');
+    return `<article class="panel act t-${x.tier}" id="act-${x.a.id}">
+      <div class="act-rank">${x.rank}</div>
+      <div class="act-body">
+        <div class="act-top"><span class="tier t-${x.tier}">${TIERS[x.tier].label}</span><span>${c.no} ${c.name}</span><span>設問 ${qs}</span>${x.unanswered ? '<span class="tag-un">未回答を含む</span>' : ''}</div>
+        <h3 class="act-title">${x.a.title}</h3>
+        <p class="act-step">${esc(x.stepText)}</p>
+        <dl class="metrics">
+          <div><dt>効果</dt><dd>${pips(x.impact, '効果')}</dd></div>
+          <div><dt>容易さ</dt><dd>${pips(x.ease, '容易さ')}</dd></div>
+          <div><dt>優先度</dt><dd class="num">${x.score}</dd></div>
+          <div><dt>得点の伸び</dt><dd class="num">+${fmt(x.gain)}</dd></div>
+        </dl>
+        <details class="act-why"><summary>根拠と進め方</summary>
+          <p class="why">${cite(x.a.why)}${x.a.easeNote ? `<br><span style="color:var(--ink-3)">容易さの判定：${x.a.easeNote}</span>` : ''}</p>
+          <p class="how">${x.a.how}</p>
+        </details>
+      </div></article>`;
+  }).join('');
+}
+
+/* ---------- recommendations ---------- */
+function renderRecs(r){
+  const lv = r.level, rec = LEVEL_RECS[lv.idx];
+  const lvColor = ['var(--critical)','var(--serious)','var(--warning)','var(--good)'][lv.idx];
+  $('#recLevel').style.setProperty('--lvlc', lvColor);
+  $('#recLevel').innerHTML = `<h3>総合 ${fmt(r.total)}点 ${lvlChip(lv)} <span>次の目標：${rec.head}</span></h3>
+    <p class="note">${lv.desc}</p>
+    <ol>${rec.steps.map(s => `<li>${cite(s)}</li>`).join('')}</ol>
+    <p class="note">${cite('WHO戦略の導入で遵守率は51.0%から67.2%に改善した[[allegranzi2013]]。一方、多角的介入の効果の確実性は低〜中等度であり[[gould2017]][[sonpar2025]]、単一の対策ではなく5つの要素を組み合わせ、評価しながら進めることが推奨される[[who2009]][[lotfinejad2021]]。')}</p>`;
+
+  $('#recComps').innerHTML = COMPONENTS.map((c, i) => {
+    const s = r.comp[i], b = bandOf(s);
+    const gaps = QUESTIONS.filter(q => q.c === c.no && !q.gate && enabled(q, state.ans) && pts(q, state.ans) < qmax(q));
+    return `<article class="panel rec-card">
+      <header><h3><b>${c.no}</b>${c.name}</h3>${bandChip(s)}<span class="sc">${fmt(s)}<small> / 100</small></span></header>
+      <ul>${COMP_RECS[c.no][b].map(t => `<li>${cite(t)}</li>`).join('')}</ul>
+      ${gaps.length ? `<p class="gaps-title">満点に届いていない設問</p><ul class="gaps">${gaps.map(q => `<li><b>${q.id}</b>${q.s}</li>`).join('')}</ul>` : '<p class="gaps-title">すべての設問が満点です</p>'}
+    </article>`;
+  }).join('');
+
+  const obsOK = state.ans['g3.4'] === 1 && state.ans['3.4b'] != null;
+  const rate = obsOK ? QMAP['3.4b'].o[state.ans['3.4b']][0] : null;
+  const leadHTML = r.lead.eligible
+    ? `<p>「はい」${r.lead.count} / 20項目（構成要素別 ${r.lead.per.join('・')}）。${r.lead.achieved ? '手指衛生リーダーシップレベルに到達しています。地域の連携施設への支援や研究発表で知見を広げてください。' : '合計12項目以上、かつ各構成要素で1項目以上が条件です。「はい」が0の構成要素から取り組んでください。'}</p>`
+    : `<p>上級（376点以上）に到達すると評価対象になります。上級まであと<b class="num">${fmt(376 - r.total)}</b>点です。</p>`;
+  $('#recExtra').innerHTML = `
+    <div class="panel"><h3>手指衛生遵守率（設問3.4b）の読み方</h3>
+      ${rate ? `<p>今回の回答：<b>${rate}</b>。</p>` : '<p>直接観察の遵守率は未回答か、回答条件（訓練・検証された観察者と5つのタイミングの方法）を満たしていません。</p>'}
+      <ul>
+        <li>遵守率は取り組みの結果を表す指標で、上の改善アクションを組み合わせて高めます。</li>
+        <li>観察者が見える場所では実施率が約3倍高く出るため、消費量など観察に影響されない指標と併用します${cite('[[srigley2014]]')}。</li>
+        <li>オーストラリアの全国事業では、遵守率が10%上がるごとに医療関連黄色ブドウ球菌菌血症が15%減少しました${cite('[[grayson2018]]')}。</li>
+        <li>日本の教育病院4施設の研究では、患者接触前の遵守率は19%（医師15%、看護師23%）でした${cite('[[sakihama2016]]')}。</li>
+      </ul></div>
+    <div class="panel"><h3>リーダーシップ基準</h3>${leadHTML}
+      </div>
+    <div class="panel"><h3>再評価と比較のしかた</h3>
+      <ul>
+        <li>HHSAFは繰り返し使うことで進捗を記録できます。両方の世界調査に参加した施設では得点が335.1点から374.4点に上がりました${cite('[[kilpatrick2018]]')}。</li>
+        <li>ウガンダのクラスターRCTでは、WHO戦略の導入でHHSAFの中央値が145点から383.75点に上がり、遵守率も22.1%から79.2%に改善しました${cite('[[nyawere2026]]')}。</li>
+        <li>評価者間の信頼性係数は0.54〜0.86です${cite('[[stewardson2013]]')}。前回と比べるときは、同じ担当者（できれば複数名の合議）で同じ資料を根拠に回答してください。</li>
+        <li>年1回の再評価を目安に「この評価を記録」で保存し、「比較」でレーダーチャートに重ねて確認します。</li>
+      </ul></div>`;
+}
+
+/* ---------- references & rubric ---------- */
+function refLink(r){
+  if (r.doi) return `<a href="https://doi.org/${r.doi}" target="_blank" rel="noopener">doi:${r.doi}</a>`;
+  if (r.url) return `<a href="${r.url}" target="_blank" rel="noopener">${r.url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a>`;
+  if (/^[A-Za-z]/.test(r.ti)) return `<a href="https://pubmed.ncbi.nlm.nih.gov/?term=${encodeURIComponent(r.ti)}" target="_blank" rel="noopener">PubMedで検索</a>`;
+  return '';
+}
+function renderRefs(){
+  $('#refList').innerHTML = REFS.map((r, i) => `<li id="ref-${i+1}"><span class="rn">${i+1}</span><span class="rt">${esc(r.au)}. ${esc(r.ti)}. ${esc(r.so)}. ${refLink(r)}
+    <span class="rd">${esc(r.de)}｜${esc(r.fi)}</span></span></li>`).join('');
+  const t = (cap, rows) => `<table><caption>${cap}</caption><tbody>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table>`;
+  $('#rubric').innerHTML = t('期待される効果', RUBRIC.impact) + t('実施の容易さ', RUBRIC.ease)
+    + `<table><caption>優先区分（優先度＝効果×容易さ）</caption><tbody>${Object.values(TIERS).map(v => `<tr><td></td><td><b>${v.long}</b>：${v.rule}</td></tr>`).join('')}</tbody></table>`;
+  $('#compSel').insertAdjacentHTML('beforeend', COMPONENTS.map(c => `<option value="${c.no}">${c.no} ${c.name}</option>`).join(''));
+}
+
+/* ---------- history ---------- */
+function renderHistory(){
+  $('#historySummary').textContent = `記録した評価（${history.length}件）`;
+  $('#histList').innerHTML = history.length ? history.map(h => `<li>
+      <span class="grow">${esc(histLabel(h))} ${lvlChip(levelOf(h.total))}</span>
+      <button type="button" class="btn" data-hload="${esc(h.id)}">読み込む</button>
+      <button type="button" class="btn" data-hdel="${esc(h.id)}">削除</button></li>`).join('')
+    : '<li class="hist-empty">まだ記録はありません。「この評価を記録」を押すと、このブラウザに保存され、レーダーチャートで比較できます。</li>';
+}
+
+/* ---------- main update ---------- */
+function refresh(){
+  const r = compute(state.ans, state.lead);
+  lastResult = r;
+  $('#sampleBanner').hidden = !state.sample;
+  updateForm(r);
+  renderResults(r);
+  renderPriority();
+  renderRecs(r);
+  persist();
+}
+function loadState(s){
+  state = s;
+  if (!state.sample && ui.compare === 'sample-prev') ui.compare = history[0] ? history[0].id : '';
+  if (state.sample) ui.compare = 'sample-prev';
+  renderCompareSelect();
+  syncInputs();
+  refresh();
+}
+
+/* ---------- text summary ---------- */
+function summaryText(){
+  const r = lastResult, m = state.meta;
+  const lines = [];
+  lines.push('WHO 手指衛生自己評価フレームワーク（HHSAF 2010）評価結果');
+  lines.push(`施設：${m.facility || '（未入力）'}　評価日：${m.date || '（未入力）'}　評価者：${m.assessor || '（未入力）'}`);
+  lines.push(`総合スコア：${fmt(r.total)} / 500（${r.level.name}・${r.level.en}）`);
+  COMPONENTS.forEach((c, i) => lines.push(`  ${c.no}. ${c.name}：${fmt(r.comp[i])} / 100`));
+  lines.push(r.lead.eligible ? `リーダーシップ基準：${r.lead.count}/20（${r.lead.achieved ? '到達' : '未到達'}）` : 'リーダーシップ基準：対象外（上級到達後に評価）');
+  lines.push(`回答済み：${r.answered} / ${r.applicable} 設問`);
+  lines.push('');
+  lines.push('改善アクションの優先順位（効果×容易さ）');
+  const saved = ui.sort; ui.sort = 'priority';
+  const acts = sortedActions(); ui.sort = saved;
+  acts.forEach(x => lines.push(`  ${x.rank}. [${TIERS[x.tier].label}] ${x.a.title}（効果${x.impact}・容易さ${x.ease}・HHSAF +${fmt(x.gain)}点）`));
+  lines.push('');
+  lines.push('※ 効果・容易さは引用文献にもとづく評価です。');
+  return lines.join('\n');
+}
+
+/* ---------- events ---------- */
+function bind(){
+  $('#tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (b) selectTab(b.dataset.tab); });
+  $('#tabs').addEventListener('keydown', e => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const ids = ['1','2','3','4','5','L'], i = ids.indexOf(ui.tab);
+    const n = ids[(i + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length];
+    selectTab(n); document.getElementById('tab-' + n).focus(); e.preventDefault();
+  });
+  $('#panels').addEventListener('change', e => {
+    const t = e.target;
+    if (t.matches('input[type=radio][data-q]')) state.ans[t.dataset.q] = +t.value;
+    else if (t.matches('input[data-lead]')){ if (t.checked) state.lead[t.dataset.lead] = true; else delete state.lead[t.dataset.lead]; }
+    else return;
+    refresh();
+  });
+  const metaBind = (id, key) => $(id).addEventListener('input', e => { state.meta[key] = e.target.value; persist(); });
+  metaBind('#fFacility', 'facility'); metaBind('#fDate', 'date'); metaBind('#fAssessor', 'assessor');
+
+  $('#btnNew').addEventListener('click', e => {
+    const dirty = !state.sample && Object.keys(state.ans).length > 0;
+    const go = () => { loadState(blankState()); selectTab('1'); toast('白紙の評価票を用意しました。構成要素1から回答してください。'); };
+    if (dirty) arm(e.currentTarget, 'もう一度押すと回答を消去', go); else go();
+  });
+  $('#btnSample').addEventListener('click', e => {
+    const dirty = !state.sample && Object.keys(state.ans).length > 0;
+    const go = () => { loadState(sampleState()); toast('サンプル回答を表示しました。'); };
+    if (dirty) arm(e.currentTarget, 'もう一度押すと現在の回答を置き換え', go); else go();
+  });
+  $('#btnRecord').addEventListener('click', () => {
+    const r = lastResult;
+    const rec = {id: Date.now().toString(36), savedAt: new Date().toISOString(), meta: {...state.meta}, ans: {...state.ans}, lead: {...state.lead}, comp: r.comp.slice(), total: r.total, sample: !!state.sample};
+    history.unshift(rec); history = history.slice(0, 30);
+    const ok = lsSet(K_HIST, history);
+    renderHistory(); renderCompareSelect();
+    toast(ok ? '記録しました。次回の評価で「比較」から選ぶと、レーダーチャートに重ねて表示できます。' : 'この環境ではブラウザに保存できませんでした。「JSONで保存」または「結果をテキストでコピー」で残してください。');
+  });
+  $('#btnCopy').addEventListener('click', () => {
+    const text = summaryText();
+    const fallback = () => {
+      const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+      document.body.removeChild(ta);
+      toast(ok ? '結果をコピーしました。' : 'コピーできませんでした。印刷またはJSON保存をお使いください。');
+    };
+    try {
+      navigator.clipboard.writeText(text).then(() => toast('結果をコピーしました。メールや報告書に貼り付けられます。'), fallback);
+    } catch (err) { fallback(); }
+  });
+  $('#btnExport').addEventListener('click', () => {
+    const data = {app:'hhsaf-2010-ja', version:1, exportedAt: new Date().toISOString(), meta: state.meta, ans: state.ans, lead: state.lead, result:{total: lastResult.total, comp: lastResult.comp, level: lastResult.level.name}};
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `HHSAF_${(state.meta.facility || '評価').replace(/[\\/:*?"<>|\s]+/g, '_')}_${state.meta.date || today()}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $('#fileImport').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const d = JSON.parse(rd.result);
+        if (!d || typeof d.ans !== 'object') throw new Error('format');
+        loadState({meta: cleanMeta(d.meta), ans: cleanAns(d.ans), lead: cleanLead(d.lead), sample: false});
+        toast(`「${f.name}」を読み込みました。`);
+      } catch (err) { toast('読み込めませんでした。このアプリで保存したJSONファイルを選んでください。'); }
+      e.target.value = '';
+    };
+    rd.readAsText(f);
+  });
+  $('#btnPrint').addEventListener('click', () => window.print());
+  $('#cmpSel').addEventListener('change', e => { ui.compare = e.target.value; renderResults(lastResult); });
+  $('#sortSel').addEventListener('change', e => { ui.sort = e.target.value; renderPriority(); persist(); });
+  $('#compSel').addEventListener('change', e => { ui.comp = e.target.value; renderPriority(); });
+  $('#inclUn').addEventListener('change', e => { ui.inclUn = e.target.checked; renderPriority(); });
+  $('#histList').addEventListener('click', e => {
+    const l = e.target.closest('[data-hload]'), d = e.target.closest('[data-hdel]');
+    if (l){
+      const h = history.find(x => x.id === l.dataset.hload); if (!h) return;
+      loadState({meta: cleanMeta(h.meta), ans: cleanAns(h.ans), lead: cleanLead(h.lead), sample: !!h.sample});
+      toast('記録した評価を読み込みました。');
+    }
+    if (d){
+      arm(d, '確認：削除', () => {
+        history = history.filter(x => x.id !== d.dataset.hdel); lsSet(K_HIST, history);
+        if (ui.compare === d.dataset.hdel) ui.compare = '';
+        renderHistory(); renderCompareSelect(); renderResults(lastResult);
+      });
+    }
+  });
+  $('#matrix').addEventListener('click', e => {
+    const a = e.target.closest('a.chip'); if (!a) return;
+    const el = document.querySelector(a.getAttribute('href'));
+    if (el){ e.preventDefault(); el.scrollIntoView({behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block:'center'}); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600); }
+  });
+}
+
+/* ---------- init ---------- */
+renderForm();
+renderRefs();
+if (framed){ $('#btnPrint').hidden = true; $('#btnExport').hidden = true; }
+$('#sortSel').value = ui.sort;
+renderHistory();
+renderCompareSelect();
+syncInputs();
+bind();
+selectTab(['1','2','3','4','5','L'].includes(ui.tab) ? ui.tab : '1');
+refresh();
+})();
+</script>
+</body>
+</html>
