@@ -17,9 +17,14 @@ EXPECT_BLOCK = {
     7: (0,  0, None,     "",     None, ""),
     8: (6,  1, D(4, 4),  "IVAC", None, ""),
     9: (6,  1, D(4, 4),  "PVAP", None, ""),
+    10: (4, 1, D(4, 3),  "VAC",  None, ""),
+    11: (4, 1, D(4, 3),  "VAC",  None, ""),
+    12: (4, 1, D(4, 3),  "VAC",  None, ""),
 }
 # ブロック -> 期待する割当シート番号（Noneは未割当）
-EXPECT_SLOT = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: None, 8: 7, 9: 8}
+# MV日数が4日以上のブロックだけに、上から順に判定シートが割り当てられる
+EXPECT_SLOT = {1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: None, 8: 7, 9: 8,
+               10: 9, 11: 10, 12: 11}
 
 ok, ng = 0, 0
 
@@ -73,12 +78,13 @@ def main(path="test_calc.xlsx"):
     chk("  MV日数（全期間）", ws6["C11"].value, 13)
 
     print("\n=== 分母（Allシート集計行）===")
-    # 4/1 は 8ブロックがV有（ブロック6はV有無空欄・ブロック7はNIV）
-    chk("  4/1 人工呼吸器使用患者数(All!C2)", al["C2"].value, 7)
+    # 4/1にV有なのは 1,2,3,4,5,8,9,10,11,12 の10ブロック
+    # （ブロック6はV有無が空欄、ブロック7はNIV）
+    chk("  4/1 人工呼吸器使用患者数", al.cell(3 if al["B1"].value == "月日" else 2, 3).value, 10)
 
     print("\n=== 月別自動集計（セクションC）===")
     r_vac, r_ivac, r_pvap = LIST_C_TOP, LIST_C_TOP + 1, LIST_C_TOP + 2
-    chk("  4月 VAC件数", lst.cell(r_vac, 2).value, 5)
+    chk("  4月 VAC件数", lst.cell(r_vac, 2).value, 8)
     chk("  4月 IVAC件数", lst.cell(r_ivac, 2).value, 1)
     chk("  4月 PVAP件数", lst.cell(r_pvap, 2).value, 1)
 

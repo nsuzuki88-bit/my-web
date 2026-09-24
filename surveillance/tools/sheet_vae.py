@@ -10,7 +10,7 @@ TBL = [
     ("A", "MV日",                    5.3),
     ("B", "日付",                    9.7),
     ("C", "日最小\nPEEP\n(cmH2O)",   7.1),
-    ("D", "日最小\nFiO2\n(%)",       7.1),
+    ("D", "日最小\nFiO2",            7.1),
     ("E", "最高\n体温\n(℃)",        7.1),
     ("F", "最低\n体温\n(℃)",        7.1),
     ("G", "WBC\n最高\n(/μL)",       7.9),
@@ -60,7 +60,7 @@ def build(wb, n):
     ws.merge_cells("A1:X1")
     ws.row_dimensions[1].height = 27.75
     ws["A2"] = ("Allシートに FiO2／PEEP を入力すると自動で反映されます。入力が必要なのは黄色のセル（C9 エピソード番号）だけです。"
-                "日最小値＝その暦日で1時間を超えて維持された最低値。")
+                "日最小値＝その暦日で1時間を超えて維持された最低値。FiO2は小数（0.4）でも％（40）でも同じ判定になります。")
     ws["A2"].font = F_NOTE
     ws.merge_cells("A2:X2")
 
@@ -72,11 +72,11 @@ def build(wb, n):
          f'MATCH({n},{L}!$G${LIST_B_TOP}:$G${LIST_B_BOT},0)),"")',
          "auto", "※自動割当。特定の患者に固定したいときは番号を直接入力"),
         ("患者ID",
-         f'=IF($C$4="","",IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78)="","",'
-         f'INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78)))', "auto", ""),
+         f'=IF($C$4="","",IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78+1)="","",'
+         f'INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78+1)))', "auto", ""),
         ("氏名",
-         f'=IF($C$4="","",IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78+2)="","",'
-         f'INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78+2)))', "auto", ""),
+         f'=IF($C$4="","",IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78+3)="","",'
+         f'INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78+3)))', "auto", ""),
         ("部屋",
          f'=IF($H$78="","",IF(INDEX({N_ALL},$F$78,$H$78)="","",INDEX({N_ALL},$F$78,$H$78)))',
          "auto", ""),
@@ -174,8 +174,8 @@ def build(wb, n):
                        F_BODY, A_C if col not in ("J", "L") else A_L)
             ws[f"{col}{r}"] = f'=IF({Y}="","",IF({idx}="","",{idx}))'
 
-        ws[f"C{r}"].number_format = "0"
-        ws[f"D{r}"].number_format = "0"
+        ws[f"C{r}"].number_format = "0.##"
+        ws[f"D{r}"].number_format = "0.##"
         ws[f"E{r}"].number_format = "0.0"
         ws[f"F{r}"].number_format = "0.0"
         ws[f"G{r}"].number_format = "#,##0"
@@ -185,18 +185,23 @@ def build(wb, n):
         lo, hi = max(R_TOP, r - 2), min(R_BOT, r + 2)      # VAEウィンドウ
         back = max(R_TOP, r - 13)                           # イベント期間14日
 
-        ws[f"M{r}"] = f'=IF(C{r}="","",MAX(C{r},5))'
+        ws[f"M{r}"] = f'=IF(C{r}="","",MAX(C{r},{PEEP_FLOOR}))'
+        # Z列（非表示）＝FiO2を小数に正規化（40％入力でも0.4入力でも同じ判定になる）
+        ws[f"Z{r}"] = f'=IF(D{r}="","",{fio2n(f"D{r}")})'
         ws[f"N{r}"] = (f'=IF(COUNT(E{r}:H{r})=0,"",IF(OR(AND(E{r}<>"",E{r}>38),'
                        f'AND(F{r}<>"",F{r}<36),AND(G{r}<>"",G{r}>=12000),'
                        f'AND(H{r}<>"",H{r}<=4000)),1,0))')
 
         if d >= 3:
-            ws[f"O{r}"] = f'=IF(COUNT(D{r-2},D{r-1})<2,0,IF(D{r-1}<=D{r-2},1,0))'
-            ws[f"P{r}"] = (f'=IF(COUNT(D{r-2},D{r},D{r+1})<3,0,'
-                           f'IF(AND(D{r}-D{r-2}>=20,D{r+1}-D{r-2}>=20),1,0))')
+            ws[f"O{r}"] = f'=IF(COUNT(Z{r-2},Z{r-1})<2,0,IF(Z{r-1}<=Z{r-2},1,0))'
+            # 0.6-0.4 が 0.19999999999999996 になる二進小数の誤差を ROUND で吸収する
+            ws[f"P{r}"] = (f'=IF(COUNT(Z{r-2},Z{r},Z{r+1})<3,0,'
+                           f'IF(AND(ROUND(Z{r}-Z{r-2},6)>={FIO2_RISE},'
+                           f'ROUND(Z{r+1}-Z{r-2},6)>={FIO2_RISE}),1,0))')
             ws[f"Q{r}"] = f'=IF(COUNT(M{r-2},M{r-1})<2,0,IF(M{r-1}<=M{r-2},1,0))'
             ws[f"R{r}"] = (f'=IF(COUNT(M{r-2},M{r},M{r+1})<3,0,'
-                           f'IF(AND(M{r}-M{r-2}>=3,M{r+1}-M{r-2}>=3),1,0))')
+                           f'IF(AND(ROUND(M{r}-M{r-2},6)>={PEEP_RISE},'
+                           f'ROUND(M{r+1}-M{r-2},6)>={PEEP_RISE}),1,0))')
             ws[f"S{r}"] = f'=IF(OR(AND(O{r}=1,P{r}=1),AND(Q{r}=1,R{r}=1)),1,0)'
             ws[f"T{r}"] = (f'=IF(AND(S{r}=1,COUNTIF(T{back}:T{r-1},1)=0,'
                            f'OR($C$12="",B{r}<$C$12)),1,0)')
@@ -220,14 +225,12 @@ def build(wb, n):
     # ================= 内部計算 ======================================
     ws.cell(R_CALC, 1, "▼ 内部計算（編集しないでください）").font = F_NOTE
     mvb = mvb_array("$C$78", "$C$78+1", "$C$78+2")
-    prev = (f'((INDEX({N_ALLD},$C$78,0)="V有")+(INDEX({N_ALLD},$C$78,0)<>"V有（NIV）")'
-            f'*((INDEX({N_ALLD},$C$78+1,0)<>"")+(INDEX({N_ALLD},$C$78+2,0)<>"")))>0')
     colrng = f"COLUMN(All!$C$1:${gl(CN)}$1)"
     # 1列左にずらした「前日がMV日か」（先頭列は常に0）
-    prevd = (f'(((INDEX(All!$B$1:${gl(CN-1)}${ALL_LAST_ROW},$C$78,0)="V有")'
-             f'+(INDEX(All!$B$1:${gl(CN-1)}${ALL_LAST_ROW},$C$78,0)<>"V有（NIV）")'
-             f'*((INDEX(All!$B$1:${gl(CN-1)}${ALL_LAST_ROW},$C$78+1,0)<>"")'
-             f'+(INDEX(All!$B$1:${gl(CN-1)}${ALL_LAST_ROW},$C$78+2,0)<>"")))>0)'
+    SHIFT = f"All!$B$1:${gl(CN-1)}${ALL_LAST_ROW}"      # 1列左にずらした範囲
+    prevd = (f'(((INDEX({SHIFT},$C$78,0)="V有")'
+             f'+(INDEX({SHIFT},$C$78,0)="")'
+             f'*((INDEX({SHIFT},$C$78+1,0)<>"")+(INDEX({SHIFT},$C$78+2,0)<>"")))>0)'
              f'*({colrng}>{C0})')
     start = f"({mvb}*(1-{prevd}))"
 
@@ -245,7 +248,7 @@ def build(wb, n):
         ep_cols[col] = (f"第{i+1}エピソード開始列", f_)
 
     calc = {
-        3:  ('V有無行',        f'=IF($C$4="","",6+5*($C$4-1))'),
+        3:  ('V有無行',        f'=IF($C$4="","",{BLOCK0}+{BSTEP}*($C$4-1))'),
         4:  ('FiO2行',          f'=IF($C$78="","",$C$78+1)'),
         5:  ('PEEP行',          f'=IF($C$78="","",$C$78+2)'),
         6:  ('部屋行',          f'=IF($C$78="","",$C$78+4)'),
@@ -254,7 +257,7 @@ def build(wb, n):
                                 f'INDEX($N$78:${gl(13+NEPISODE)}$78,1,$C$9)),"")'),
         9:  ('エピソード日数',  f'=IF($H$78="",0,MIN(SUMPRODUCT(MIN(IF((1-{mvb})*'
                                 f'({colrng}>=$H$78),{colrng},{CN+1}))),{CN+1})-$H$78)'),
-        10: ('開始日',          f'=IF($H$78="","",INDEX(All!$C$5:${gl(CN)}$5,1,$H$78-{C0-1}))'),
+        10: ('開始日',          f'=IF($H$78="","",INDEX(All!$C${DATE_ROW}:${gl(CN)}${DATE_ROW},1,$H$78-{C0-1}))'),
         11: ('エピソード総数',  f'=IF($C$78="","",SUMPRODUCT(--({start}>0)))'),
         12: ('MV総日数',        f'=IF($C$78="","",SUMPRODUCT(--({mvb})))'),
         **ep_cols,
@@ -266,6 +269,7 @@ def build(wb, n):
     for r in (R_CALC - 1, R_CALC):
         ws.row_dimensions[r].hidden = True
     ws.column_dimensions["Y"].hidden = True
+    ws.column_dimensions["Z"].hidden = True
 
     # ================= 入力規則・条件付き書式 ========================
     dv = DataValidation(type="whole", operator="between", formula1=1, formula2=NEPISODE,

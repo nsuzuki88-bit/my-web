@@ -32,18 +32,18 @@ def build(wb):
         style_cell(ws[a], NAVY, Font(bold=True, size=9, color="FFFFFF"), A_CW)
     for c in range(C0, CN + 1):
         cell = ws.cell(5, c)
-        cell.value = f"=All!{gl(c)}5"
+        cell.value = f"=All!{gl(c)}{DATE_ROW}"
         style_cell(cell, NAVY, Font(bold=True, size=8, color="FFFFFF"), A_C, numfmt="m/d")
     ws.row_dimensions[5].height = 24
 
     # ---- 患者ブロック ------------------------------------------------
     for k in range(1, NBLK + 1):
         b = clin_base(k)
-        vr, pr = all_v(k), all_p(k)
+        idr, nmr = all_id(k), all_name(k)
         ws.cell(b, 1, k)
         style_cell(ws.cell(b, 1), BAND, Font(bold=True, size=9), A_C)
-        ws.cell(b + 1, 1).value = f'=IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},{vr})="","",INDEX(All!$A$1:$A${ALL_LAST_ROW},{vr}))'
-        ws.cell(b + 2, 1).value = f'=IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},{pr})="","",INDEX(All!$A$1:$A${ALL_LAST_ROW},{pr}))'
+        ws.cell(b + 1, 1).value = f'=IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},{idr})="","",INDEX(All!$A$1:$A${ALL_LAST_ROW},{idr}))'
+        ws.cell(b + 2, 1).value = f'=IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},{nmr})="","",INDEX(All!$A$1:$A${ALL_LAST_ROW},{nmr}))'
         for off in (1, 2):
             style_cell(ws.cell(b + off, 1), AUTO, F_BODY, A_C)
         for off in (3, 4, 5, 6, 7):

@@ -40,9 +40,9 @@ def mutate(src, dst):
     # ④ ブロック9：PVAP基準を消す → PVAP から IVAC に格下げされるはず
     cl.cell(clin_base(9) + 6, C0 + 5 - 1).value = None
 
-    # ⑤ 新規患者をブロック20に追加 → VAE-09 に自動で割り当たるはず
-    al.cell(all_v(20), 1, "T20")
-    al.cell(all_p(20), 1, "検証20")
+    # ⑤ 新規患者をブロック20に追加 → VAE-12 に自動で割り当たるはず
+    al.cell(all_id(20), 1, "T20")
+    al.cell(all_name(20), 1, "検証20")
     #    FiO2 40,40,40,70,70 → ベースラインはMV2-3日目、DOEはMV4日目（4/4）
     for d, (f, p) in enumerate([(40, 5), (40, 5), (40, 5), (70, 5), (70, 5)]):
         al.cell(all_v(20), C0 + d, "V有")
@@ -74,8 +74,8 @@ def verify(path):
     print("\n④ ブロック9：PVAP基準を削除 → IVACへ格下げ")
     chk("  判定①", wb["VAE-08"]["K9"].value, "IVAC")
 
-    print("\n⑤ ブロック20に患者を追加 → VAE-09 が自動で埋まる")
-    w = wb["VAE-09"]
+    print("\n⑤ ブロック20に患者を追加 → VAE-12 が自動で埋まる")
+    w = wb["VAE-12"]
     chk("  ブロック番号", w["C4"].value, 20)
     chk("  患者ID", w["C5"].value, "T20")
     chk("  MV1日目", w["C10"].value, D(4, 1))

@@ -24,16 +24,19 @@ def build(wb):
     ws["A1"].fill = fill("C00000")
     ws.merge_cells("A1:N1")
     ws.row_dimensions[1].height = 27.75
-    ws["A2"] = ("AllシートにFiO2/PEEPを入力すると、人工呼吸器装着患者が自動で検出され、上から順に VAE-01〜VAE-40 の"
-                "個別判定シートへ割り当てられます。黄色のセル（年齢・臓器提供同意日・備考）のみ手入力です。")
-    ws["A3"] = ("MV日の判定：AllのV有無行が「V有」、または FiO2/PEEP のいずれかに入力がある日。"
-                "「V有（NIV）」の日は非侵襲換気のためVAE対象外として除外します。")
+    ws["A2"] = (f"AllシートにFiO2/PEEPを入力すると、人工呼吸器装着患者が自動で検出され、"
+                f"MV日数が{MV_MIN}日以上のブロックに上から順に VAE-01〜VAE-{NSHEET:02d} の"
+                f"個別判定シートが割り当てられます。黄色のセル（年齢・臓器提供同意日・備考）のみ手入力です。")
+    ws["A3"] = ("MV日の判定：AllのV有無行が「V有」の日。「V無」「V有（NIV）」の日は除外します"
+                "（非侵襲換気はVAEの対象外）。V有無が空欄の日は、FiO2／PEEPに入力があればMV日とみなします。"
+                "FiO2は小数（0.4）でも％（40）でも同じ判定になります。")
     for r in (2, 3):
         ws.cell(r, 1).font = F_NOTE
         ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=14)
 
     # ============ セクションA：判定シート索引 =========================
-    ws.cell(5, 1, "A. 個別判定シート（VAE-01〜VAE-40）　※行をクリックすると該当シートへ移動します")
+    ws.cell(5, 1, f"A. 個別判定シート（VAE-01〜VAE-{NSHEET:02d}）"
+                  f"　※判定シート名をクリックすると該当シートへ移動します")
     ws.cell(5, 1).font = F_SEC
     ws.merge_cells(start_row=5, start_column=1, end_row=5, end_column=14)
 
@@ -68,7 +71,7 @@ def build(wb):
 
     # ============ セクションB：全ブロックスキャン ====================
     ws.cell(LIST_B_HDR, 1, f"B. Allシート 全{NBLK}ブロックのスキャン　"
-                           f"※MV日数が1以上のブロックに上から順に判定シートが割り当てられます")
+                           f"※MV日数が{MV_MIN}日以上のブロックに、上から順に判定シートが割り当てられます")
     ws.cell(LIST_B_HDR, 1).font = F_SEC
     ws.merge_cells(start_row=LIST_B_HDR, start_column=1, end_row=LIST_B_HDR, end_column=14)
 
@@ -77,20 +80,22 @@ def build(wb):
     ws.row_dimensions[LIST_B_HDR + 1].height = 32
 
     colrng = f"COLUMN(All!$C$1:${gl(CN)}$1)"
-    dates = f"All!$C$5:${gl(CN)}$5"
+    dates = f"All!$C${DATE_ROW}:${gl(CN)}${DATE_ROW}"
     for k in range(1, NBLK + 1):
         r = LIST_B_TOP + k - 1
         vr, fr, pr = all_v(k), all_f(k), all_p(k)
+        idr, nmr = all_id(k), all_name(k)
         mvb = mvb_array(vr, fr, pr)
         ws.cell(r, 1, k)
-        ws.cell(r, 2, f'=IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},{vr})="","",'
-                      f'INDEX(All!$A$1:$A${ALL_LAST_ROW},{vr}))')
-        ws.cell(r, 3, f'=IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},{pr})="","",'
-                      f'INDEX(All!$A$1:$A${ALL_LAST_ROW},{pr}))')
+        ws.cell(r, 2, f'=IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},{idr})="","",'
+                      f'INDEX(All!$A$1:$A${ALL_LAST_ROW},{idr}))')
+        ws.cell(r, 3, f'=IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},{nmr})="","",'
+                      f'INDEX(All!$A$1:$A${ALL_LAST_ROW},{nmr}))')
         ws.cell(r, 4, f"=SUMPRODUCT(--({mvb}))")
         ws.cell(r, 5, f'=IF($D{r}=0,"",INDEX({dates},1,MATCH(TRUE,INDEX({mvb},0),0)))')
         ws.cell(r, 6, f'=IF($D{r}=0,"",LOOKUP(2,1/{mvb},{dates}))')
-        ws.cell(r, 7, f'=IF($D{r}=0,"",COUNTIF($D${LIST_B_TOP}:$D{r},">0"))')
+        ws.cell(r, 7, f'=IF($D{r}<{MV_MIN},"",'
+                      f'COUNTIF($D${LIST_B_TOP}:$D{r},">="&{MV_MIN}))')
         for col, fmt in ((1, "0"), (2, "General"), (3, "General"), (4, "0"),
                          (5, "yyyy/m/d"), (6, "yyyy/m/d"), (7, "0")):
             style_cell(ws.cell(r, col), AUTO, F_BODY, A_C, numfmt=fmt)
@@ -113,7 +118,7 @@ def build(wb):
     hr = LIST_C_HDR + 1
     style_cell(ws.cell(hr, 1, "指標"), NAVY, F_HDR, A_C)
     for i in range(12):
-        style_cell(ws.cell(hr, i + 2, f'=TEXT(EDATE(All!$C$5,{i}),"m月")'),
+        style_cell(ws.cell(hr, i + 2, f'=TEXT(EDATE(All!$C${DATE_ROW},{i}),"m月")'),
                    NAVY, F_HDR, A_C)
     style_cell(ws.cell(hr, 14, "計"), NAVY, F_HDR, A_C)
 
@@ -121,7 +126,8 @@ def build(wb):
     MA, MB = f"$M${LIST_A_TOP}:$M${LIST_A_BOT}", f"$N${LIST_A_TOP}:$N${LIST_A_BOT}"
 
     def count(kind, i):
-        lo, hi = f'">="&EDATE(All!$C$5,{i})', f'"<"&EDATE(All!$C$5,{i+1})'
+        lo = f'">="&EDATE(All!$C${DATE_ROW},{i})'
+        hi = f'"<"&EDATE(All!$C${DATE_ROW},{i+1})'
         return (f'=COUNTIFS({KA},{lo},{KA},{hi},{KB},"{kind}")'
                 f'+COUNTIFS({MA},{lo},{MA},{hi},{MB},"{kind}")')
 

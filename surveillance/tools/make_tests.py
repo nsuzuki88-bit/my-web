@@ -26,6 +26,12 @@ CASES = [
      [40, 40, 40, 60, 60, 60], [5, 5, 5, 5, 5, 5]),
     (9, "PVAP（IVAC＋基準1）", "V有",
      [40, 40, 40, 60, 60, 60], [5, 5, 5, 5, 5, 5]),
+    (10, "FiO2ちょうど+20ポイント（％入力・二進小数の境界）", "V有",
+     [40, 40, 60, 60], [5, 5, 5, 5]),
+    (11, "FiO2ちょうど+0.20（小数入力・二進小数の境界）", "V有",
+     [0.4, 0.4, 0.6, 0.6], [5, 5, 5, 5]),
+    (12, "PEEPちょうど+3cmH2O（境界）", "V有",
+     [40, 40, 40, 40], [5, 5, 8, 8]),
 ]
 
 # 臨床所見： (ブロック, MV日, 行オフセット, 値)
@@ -43,8 +49,8 @@ def main(src="out.xlsx", dst="test.xlsx"):
     al, cl, lst = wb["All"], wb["臨床所見"], wb["VAE対象一覧"]
 
     for k, desc, vmark, fio2, peep in CASES:
-        al.cell(all_v(k), 1, f"T{k:02d}")           # 患者ID
-        al.cell(all_p(k), 1, f"検証{k:02d}")        # 氏名
+        al.cell(all_id(k), 1, f"T{k:02d}")          # 患者ID
+        al.cell(all_name(k), 1, f"検証{k:02d}")     # 氏名
         for d, (f, p) in enumerate(zip(fio2, peep)):
             c = C0 + d
             if f is None and p is None:
