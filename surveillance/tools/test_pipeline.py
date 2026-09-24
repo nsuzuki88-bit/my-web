@@ -5,7 +5,7 @@
 """
 import datetime as dt
 import sys, openpyxl
-from common import (LIST_A_TOP, NCLIN, NSHEET, clin_base, C0, CN, DATE_ROW)
+from common import (LIST_A_TOP, NCLIN, NSHEET, clin_base, C0, CN)
 
 ok = ng = 0
 
@@ -23,8 +23,10 @@ def chk(label, got, want):
 
 
 def col_of(ws_all, date):
+    from build import probe          # 日付行はファイルごとに違う（2026年度版は6行目）
+    date_row = probe(ws_all)["DATE_ROW"]
     for c in range(C0, CN + 1):
-        v = ws_all.cell(DATE_ROW, c).value
+        v = ws_all.cell(date_row, c).value
         if isinstance(v, dt.datetime) and v.date() == date.date():
             return c
     raise ValueError(date)

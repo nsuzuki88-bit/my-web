@@ -85,17 +85,21 @@ LIST_D_TOP = LIST_D_HDR + 2
 LIST_D_BOT = LIST_D_TOP + NSHEET - 1
 
 # ---- 名前付き範囲 ---------------------------------------------------
-N_ALL  = "rALL"    # All!$A$1:$NC$<last>   … 絶対列番号でINDEXする用
-N_ALLD = "rALLD"   # All!$C$1:$NC$<last>   … 日付列のみ（配列演算用）
-N_CLIN = "rCLIN"   # 臨床所見!$A$1:$NC$<last>
+N_ALL  = "VAE_ALL"   # All!$A$1:$NC$<last>   … 絶対列番号でINDEXする用
+N_ALLD = "VAE_ALLD"  # All!$C$1:$NC$<last>   … 日付列のみ（配列演算用）
+N_CLIN = "VAE_CLIN"  # 臨床所見!$A$1:$NC$<last>
 # VAC判定は当日・前日・前々日・翌日を同時に見るため、同じ長さの配列を4本そろえる。
 # 判定対象の日は日付列の3日目以降（前々日が日付列に収まる日）なので、
 # 当日の範囲を E列から始める。こうするとどの範囲もA列・B列のラベル文字
 #（"FiO2" "PEEP" "氏名" 等）を含まないため、引き算で #VALUE! にならない。
-N_D0 = "rD0"       # 当日     E..NC
-N_D1 = "rD1"       # 前日     D..NB
-N_D2 = "rD2"       # 前々日   C..NA
-N_DP = "rDP"       # 翌日     F..ND
+N_D0 = "VAE_D0"    # 当日     E..NC
+N_D1 = "VAE_D1"    # 前日     D..NB
+N_D2 = "VAE_D2"    # 前々日   C..NA
+N_DP = "VAE_DP"    # 翌日     F..ND
+# 名前は必ず「_」を含める。以前の rD1・rD2 は Excel では RD列1行目・2行目のセル番地と
+# 区別できず、名前として扱われなかった（LibreOffice では名前として扱われるため気づけない）。
+for _nm in (N_ALL, N_ALLD, N_CLIN, N_D0, N_D1, N_D2, N_DP):
+    assert "_" in _nm, f"名前付き範囲 {_nm} はセル番地と衝突するおそれがあります"
 
 # ---- 判定のしきい値 -------------------------------------------------
 FIO2_RISE = 0.2    # FiO2 の上昇幅（小数。20ポイント＝0.2）
@@ -178,7 +182,7 @@ def cf_fill(hexrgb):
 
 
 # ---- VAC判定の配列式（一覧シートがAllシートから直接判定するために使う）----
-# 当日(rD0)・前日(rD1)・前々日(rD2)・翌日(rDP) の4本の配列を列ごとに突き合わせ、
+# 当日(VAE_D0)・前日(VAE_D1)・前々日(VAE_D2)・翌日(VAE_DP) の4本の配列を列ごとに突き合わせ、
 # 「その日がDOE（酸素化悪化の初日）の条件を満たすか」を 0/1 の配列で返す。
 def _idx(rng, row):
     return f"INDEX({rng},{row},0)"
@@ -241,3 +245,24 @@ def doe_col_formula(k, mvdays_cell, after_cell=None):
     else:
         guard = f"{mvdays_cell}<{MV_MIN}"
     return f"=IF({guard},{CN + 1000},SUMPRODUCT(MIN(IF({arr},{col},{CN + 1000}))))"
+
+
+# 範囲全体をまとめて計算する数式（IF の配列評価・SUMPRODUCT・MATCH(TRUE,…)・LOOKUP(2,1/…)）。
+# Excel は「Ctrl+Shift+Enter で確定した配列数式」でないと、SUMPRODUCT の中の IF を
+# 範囲全体で評価せず、数式のある行・列と交差する1セルだけで計算してしまう
+# （LibreOffice は通常の数式でも配列として評価するため、LibreOfficeでは差が出ない）。
+# 生成したシートのこうした数式は、すべて配列数式として保存する。
+ARRAY_MARKERS = ("SUMPRODUCT(", "MATCH(TRUE", "LOOKUP(2,1/")
+
+
+def as_array_formulas(ws):
+    """シート内の配列評価が必要な数式を、単一セルの配列数式（{=…}）に置き換える"""
+    from openpyxl.worksheet.formula import ArrayFormula
+    n = 0
+    for row in ws.iter_rows():
+        for c in row:
+            v = c.value
+            if isinstance(v, str) and v.startswith("=") and any(m in v for m in ARRAY_MARKERS):
+                c.value = ArrayFormula(c.coordinate, v)
+                n += 1
+    return n

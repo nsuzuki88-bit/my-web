@@ -2,14 +2,16 @@
 """実データ（ブロック414・DOE 2026/9/18）で臨床所見の入力挙動を確認する"""
 import datetime as dt, sys, openpyxl
 from openpyxl.utils import get_column_letter as gl
-from common import LIST_A_TOP, clin_base, C0, CN, DATE_ROW
+from common import LIST_A_TOP, clin_base, C0, CN
 
 T_HI, T_LO, W_HI, W_LO, ABX, ABX_MEMO, PVAP, SPEC = range(8)
 
 
 def col_of(al, d):
+    from build import probe          # 日付行はファイルごとに違う（2026年度版は6行目）
+    date_row = probe(al)["DATE_ROW"]
     for c in range(C0, CN + 1):
-        v = al.cell(DATE_ROW, c).value
+        v = al.cell(date_row, c).value
         if isinstance(v, dt.datetime) and v.date() == d.date():
             return c
     raise ValueError(d)

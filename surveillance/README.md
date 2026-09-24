@@ -27,6 +27,9 @@ Allシートに **FiO2 と PEEP を入力すると、人工呼吸器装着患者
 - **ファイルは1つ**です。元の `20XX年度サーベイランスワークシート` にシートを追加したものなので、
   ブック間リンク切れの心配がありません。既存のAllシート・上半期/下半期/年間集計シート・
   16個のグラフはそのまま残しています。
+- **Excelで確実に計算される形**で保存しています。範囲全体をまとめて計算する数式は配列数式（`{=…}`）、
+  名前付き範囲は `VAE_D0` のようにセル番地と紛れない名前にしています（下の「Excelでの注意」参照）。
+  また、全数式セルに計算結果を保存済みなので、保護ビューやファイルのプレビューでも判定結果が表示されます。
 
 ---
 
@@ -137,13 +140,17 @@ FiO2 と PEEP が JHAIS の酸素化悪化基準に合致すると、その日�
 
 ## 検証
 
-2通りの方法で検証しています（**合計 15,120項目すべて一致**）。
+3通りの方法で検証しています（最新の実行で **9,511項目すべて一致**、Excel互換の点検で**問題0件**）。
 
 1. **独立実装との照合** — 同じ NHSN/JHAIS アルゴリズムを Python で別に実装し
    （`tools/ref_vae.py`）、表計算の結果と全ブロック分を突き合わせます。
    表計算の数式と別実装を突き合わせることで、実装の取り違えを相互に検出できます。
 2. **教科書例との照合** — NHSN／JHAIS マニュアルの例をワークシートに投入し、
    LibreOffice で全再計算して期待値と照合します。
+3. **Excel互換の点検** — LibreOffice は Excel より数式の解釈が寛容なため、1・2 だけでは
+   「LibreOfficeでは動くがExcelでは動かない」数式を見逃します。`tools/audit_xl.py` で、
+   配列計算が配列数式になっているか・名前付き範囲がセル番地と衝突しないか・
+   Excel 2010 にない関数を使っていないか・未定義の名前がないかを全数式について点検します。
 
 | 検証項目 | 内容 |
 | --- | --- |
@@ -169,6 +176,10 @@ FiO2 と PEEP が JHAIS の酸素化悪化基準に合致すると、その日�
 ```bash
 cd tools
 python3 build.py <元の年度ワークシート>.xlsx out.xlsx   # ビルド（構造は自動判定）
+python3 recalc.py out.xlsx out_calc.xlsx                # 計算結果を得る
+python3 strip_charts.py out_calc.xlsx out_plain.xlsx
+python3 fill_cache.py out.xlsx out_plain.xlsx 完成版.xlsx  # 数式セルに計算結果を保存
+python3 audit_xl.py 完成版.xlsx                          # Excel互換の点検（問題0件を確認）
 python3 make_tests.py                                   # 教科書例を投入
 python3 recalc.py test.xlsx test_calc.xlsx              # LibreOfficeで全再計算
 python3 strip_charts.py test_calc.xlsx test_plain.xlsx
@@ -182,6 +193,23 @@ python3 ref_vae.py <年度ワークシート>.xlsx              # 独立実装�
 `build.py` の引数：`build.py <入力> <出力> [判定シート枚数] [スキャン範囲] [臨床所見スロット数]`
 
 必要パッケージ：`openpyxl`、`reportlab`、`libreoffice-calc`、`python3-uno`
+
+---
+
+## Excelでの注意
+
+以前の版には、**LibreOfficeでは正しく計算されるのにExcelでは一覧・臨床所見・判定シートが空欄になる**
+不具合が2つありました（Allシートの赤色表示は条件付き書式なので、Excelでも表示されていました）。
+
+1. **SUMPRODUCT の中の IF** — Excel は、Ctrl+Shift+Enter で確定した配列数式でなければ、
+   SUMPRODUCT の中の IF を範囲全体で計算しません。VAC判定（一覧の非表示列 P・Q）と
+   判定シートのエピソード計算（78行目）がこれに当たり、DOE が求まらずに以降がすべて空欄になっていました。
+   → 該当する数式をすべて配列数式として保存するよう修正。
+2. **名前付き範囲 `rD1`・`rD2`** — Excel では RD列1行目・2行目のセル番地と同じ綴りのため、
+   名前として扱われませんでした。→ `VAE_D1` などの名前に変更し、再発しないよう `common.py` で点検。
+
+一覧の非表示列 P・Q と判定シート78行目の数式は配列数式（数式バーで `{=…}` と表示）です。
+編集しないでください。編集して Enter だけで確定すると、古いExcelでは配列数式でなくなり判定が止まります。
 
 ---
 

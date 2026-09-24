@@ -180,6 +180,8 @@ def guide_text():
         ("JHAIS", "日本環境感染学会 JHAIS委員会 医療器具関連感染サーベイランス部門 マニュアル Ver.2.5 "
                   "「5) 人工呼吸器関連イベント(VAE)サーベイランス」"),
         ("注意", "自動判定は判定の補助です。最終判定は原典プロトコールと診療記録に基づき感染管理担当者が行ってください。"),
+        ("配列数式", "VAE対象一覧の非表示列P・Qと、判定シート78行目の数式は配列数式（数式バーで {=…} と表示）です。"
+                     "編集しないでください。編集してEnterだけで確定すると、判定が止まることがあります。"),
     ]
 
 
@@ -249,6 +251,11 @@ def main():
     for n in range(1, NSHEET + 1):
         sheet_vae.build(wb, n)
     print("sheets built", round(time.time() - t0, 1), "s")
+
+    # Excelで範囲全体を計算させるため、配列評価の数式は配列数式で保存する
+    narr = sum(common.as_array_formulas(wb[s]) for s in
+               ["VAE対象一覧", "臨床所見"] + [f"VAE-{n:02d}" for n in range(1, NSHEET + 1)])
+    print(f"配列数式に変換: {narr}セル")
 
     order = (["使い方", "All", "VAE対象一覧", "臨床所見"]
              + [f"VAE-{n:02d}" for n in range(1, NSHEET + 1)])
