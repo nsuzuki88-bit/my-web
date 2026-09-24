@@ -1,239 +1,203 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="ja">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #6d6d6d; -webkit-text-stroke: #6d6d6d}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #6b0001; -webkit-text-stroke: #6b0001}
-    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #fb0007; -webkit-text-stroke: #fb0007}
-    p.p4 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #0000ff; -webkit-text-stroke: #0000ff}
-    p.p5 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; -webkit-text-stroke: #000000}
-    p.p6 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #4d5055; -webkit-text-stroke: #4d5055}
-    p.p7 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #18702b; -webkit-text-stroke: #18702b}
-    p.p8 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; color: #093c94; -webkit-text-stroke: #093c94}
-    p.p9 {margin: 0.0px 0.0px 0.0px 0.0px; font: 14.0px Menlo; -webkit-text-stroke: #000000; min-height: 16.0px}
-    span.s1 {font-kerning: none; background-color: #ecf1f7}
-    span.s2 {font-kerning: none; color: #fb0007; background-color: #ecf1f7; -webkit-text-stroke: 0px #fb0007}
-    span.s3 {font-kerning: none; color: #2a2a2a; background-color: #ecf1f7; -webkit-text-stroke: 0px #2a2a2a}
-    span.s4 {font-kerning: none; color: #000000; background-color: #ecf1f7; -webkit-text-stroke: 0px #000000}
-    span.s5 {font-kerning: none; color: #0000ff; background-color: #ecf1f7; -webkit-text-stroke: 0px #0000ff}
-    span.s6 {font-kerning: none; color: #6b0001; background-color: #ecf1f7; -webkit-text-stroke: 0px #6b0001}
-    span.s7 {font-kerning: none; color: #6f0ec3; background-color: #ecf1f7; -webkit-text-stroke: 0px #6f0ec3}
-    span.s8 {font-kerning: none; color: #093c94; background-color: #ecf1f7; -webkit-text-stroke: 0px #093c94}
-    span.s9 {font-kerning: none; color: #18702b; background-color: #ecf1f7; -webkit-text-stroke: 0px #18702b}
-    span.s10 {font-kerning: none; color: #137646; background-color: #ecf1f7; -webkit-text-stroke: 0px #137646}
-    span.s11 {font-kerning: none}
-    span.s12 {font-kerning: none; color: #0e6e6d; background-color: #ecf1f7; -webkit-text-stroke: 0px #0e6e6d}
-    span.s13 {font-kerning: none; color: #4d5055; background-color: #ecf1f7; -webkit-text-stroke: 0px #4d5055}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会員登録連携</title>
+    <!-- Tailwind CSS (デザイン用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- LINE LIFF SDK -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .loader {
+            border-top-color: #06c755;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body>
-<p class="p1"><span class="s1">&lt;!DOCTYPE</span><span class="s2"> html</span><span class="s1">&gt;</span></p>
-<p class="p2"><span class="s3">&lt;</span><span class="s1">html</span><span class="s4"> </span><span class="s2">lang</span><span class="s3">=</span><span class="s5">"ja"</span><span class="s3">&gt;</span></p>
-<p class="p2"><span class="s3">&lt;</span><span class="s1">head</span><span class="s3">&gt;</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">meta</span><span class="s4"> </span><span class="s1">charset</span><span class="s3">=</span><span class="s5">"UTF-8"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">meta</span><span class="s4"> </span><span class="s2">name</span><span class="s3">=</span><span class="s1">"viewport"</span><span class="s4"> </span><span class="s2">content</span><span class="s3">=</span><span class="s1">"width=device-width, initial-scale=1.0"</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">title</span><span class="s3">&gt;</span><span class="s1">会員登録連携</span><span class="s3">&lt;/</span><span class="s6">title</span><span class="s3">&gt;</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s1">&lt;!-- Tailwind CSS (デザイン用) --&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">script</span><span class="s4"> </span><span class="s2">src</span><span class="s3">=</span><span class="s1">"https://cdn.tailwindcss.com"</span><span class="s3">&gt;&lt;/</span><span class="s6">script</span><span class="s3">&gt;</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s1">&lt;!-- LINE LIFF SDK --&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">script</span><span class="s4"> </span><span class="s2">src</span><span class="s3">=</span><span class="s1">"https://static.line-scdn.net/liff/edge/2/sdk.js"</span><span class="s3">&gt;&lt;/</span><span class="s6">script</span><span class="s3">&gt;</span></p>
-<p class="p2"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s1">style</span><span class="s3">&gt;</span></p>
-<p class="p7"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s7">@import</span><span class="s4"> </span><span class="s8">url</span><span class="s4">(</span><span class="s1">'https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&amp;display=swap'</span><span class="s4">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s6">body</span><span class="s1"> {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s2">font-family:</span><span class="s1"> </span><span class="s9">'Noto Sans JP'</span><span class="s1">, </span><span class="s8">sans-serif</span><span class="s1">;</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s1">background-color:</span><span class="s4"> </span><span class="s8">#f3f4f6</span><span class="s4">;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s6">.loader</span><span class="s1"> {</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s1">border-top-color:</span><span class="s4"> </span><span class="s8">#06c755</span><span class="s4">;</span></p>
-<p class="p8"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s2">-webkit-animation:</span><span class="s4"> </span><span class="s1">spinner</span><span class="s4"> </span><span class="s10">1.5s</span><span class="s4"> </span><span class="s1">linear</span><span class="s4"> </span><span class="s1">infinite</span><span class="s4">;</span></p>
-<p class="p8"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s2">animation:</span><span class="s4"> </span><span class="s1">spinner</span><span class="s4"> </span><span class="s10">1.5s</span><span class="s4"> </span><span class="s1">linear</span><span class="s4"> </span><span class="s1">infinite</span><span class="s4">;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">@keyframes</span><span class="s1"> </span><span class="s8">spinner</span><span class="s1"> {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s10">0%</span><span class="s1"> { </span><span class="s2">transform:</span><span class="s1"> </span><span class="s8">rotate(</span><span class="s10">0deg</span><span class="s8">)</span><span class="s1">; }</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s10">100%</span><span class="s1"> { </span><span class="s2">transform:</span><span class="s1"> </span><span class="s8">rotate(</span><span class="s10">360deg</span><span class="s8">)</span><span class="s1">; }</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span>}</span></p>
-<p class="p2"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;/</span><span class="s1">style</span><span class="s3">&gt;</span></p>
-<p class="p2"><span class="s3">&lt;/</span><span class="s1">head</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s3">&lt;</span><span class="s6">body</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"text-gray-800"</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"app"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"max-w-md mx-auto min-h-screen bg-white shadow-lg overflow-hidden relative"</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s1"><span class="Apple-converted-space">        </span></span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">&lt;!-- ヘッダー --&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"bg-[#06c755] p-6 text-center text-white"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;</span><span class="s6">h1</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"text-xl font-bold"</span><span class="s3">&gt;</span><span class="s4">会員登録</span><span class="s3">&lt;/</span><span class="s6">h1</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;</span><span class="s6">p</span><span class="s1"> </span><span class="s2">class</span><span class="s3">=</span><span class="s5">"text-sm opacity-90 mt-1"</span><span class="s3">&gt;</span><span class="s1">ショップカード連携のために</span><span class="s3">&lt;</span><span class="s6">br</span><span class="s3">&gt;</span><span class="s1">お名前を教えてください</span><span class="s3">&lt;/</span><span class="s6">p</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s3">&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">&lt;!-- 読み込み中表示 --&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"loading"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"flex flex-col items-center justify-center py-20 px-6 text-center"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"loading-spinner"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"</span><span class="s3">&gt;&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;</span><span class="s6">p</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"loading-text"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"text-gray-500 text-sm"</span><span class="s3">&gt;</span><span class="s4">LINEログイン中...</span><span class="s3">&lt;/</span><span class="s6">p</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s3">&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">&lt;!-- 登録フォーム --&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"form-container"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"hidden p-6"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;</span><span class="s6">form</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"registrationForm"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"space-y-6"</span><span class="s3">&gt;</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">                </span></span><span class="s1">&lt;!-- LINE情報表示エリア（読み取り専用） --&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center space-x-3"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                    </span></span><span class="s3">&lt;</span><span class="s6">img</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"userPicture"</span><span class="s4"> </span><span class="s2">src</span><span class="s3">=</span><span class="s1">""</span><span class="s4"> </span><span class="s2">alt</span><span class="s3">=</span><span class="s1">"Profile"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"w-10 h-10 rounded-full bg-gray-300 object-cover hidden"</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                        </span></span><span class="s3">&lt;</span><span class="s6">p</span><span class="s1"> </span><span class="s2">class</span><span class="s3">=</span><span class="s5">"text-xs text-gray-400"</span><span class="s3">&gt;</span><span class="s1">LINEアカウント</span><span class="s3">&lt;/</span><span class="s6">p</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                        </span></span><span class="s3">&lt;</span><span class="s6">p</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"lineDisplayName"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"font-bold text-gray-700"</span><span class="s3">&gt;</span><span class="s4">取得中...</span><span class="s3">&lt;/</span><span class="s6">p</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span><span class="s3">&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s3">&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                    </span></span><span class="s3">&lt;</span><span class="s6">label</span><span class="s4"> </span><span class="s2">for</span><span class="s3">=</span><span class="s1">"realName"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"block text-sm font-medium text-gray-700 mb-1"</span><span class="s3">&gt;</span><span class="s4">お名前 (フルネーム)</span><span class="s3">&lt;/</span><span class="s6">label</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                    </span></span><span class="s3">&lt;</span><span class="s6">input</span><span class="s4"> </span><span class="s2">type</span><span class="s3">=</span><span class="s1">"text"</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"realName"</span><span class="s4"> </span><span class="s2">name</span><span class="s3">=</span><span class="s1">"realName"</span><span class="s4"> </span><span class="s2">required</span><span class="s4"> </span><span class="s2">placeholder</span><span class="s3">=</span><span class="s1">"例：山田 太郎"</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                        </span></span><span class="s2">class</span><span class="s3">=</span><span class="s1">"w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#06c755] focus:border-transparent outline-none transition-colors"</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span><span class="s3">&lt;</span><span class="s6">p</span><span class="s1"> </span><span class="s2">class</span><span class="s3">=</span><span class="s5">"text-xs text-gray-500 mt-1"</span><span class="s3">&gt;</span><span class="s1">※顧客管理のために使用されます</span><span class="s3">&lt;/</span><span class="s6">p</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s3">&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                </span></span><span class="s3">&lt;</span><span class="s6">button</span><span class="s4"> </span><span class="s2">type</span><span class="s3">=</span><span class="s1">"submit"</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"submitBtn"</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                    </span></span><span class="s2">class</span><span class="s3">=</span><span class="s1">"w-full bg-[#06c755] hover:bg-[#05b34d] text-white font-bold py-4 rounded-lg shadow-md transition-transform transform active:scale-95 flex justify-center items-center"</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span><span class="s3">&lt;</span><span class="s6">span</span><span class="s3">&gt;</span><span class="s1">登録してショップカードへ</span><span class="s3">&lt;/</span><span class="s6">span</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s3">&lt;/</span><span class="s6">button</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;/</span><span class="s6">form</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s3">&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">&lt;!-- 完了画面 --&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"complete-container"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"hidden p-6 text-center pt-10"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;</span><span class="s6">div</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"w-16 h-16 bg-green-100 text-[#06c755] rounded-full flex items-center justify-center mx-auto mb-4"</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                </span></span><span class="s3">&lt;</span><span class="s6">svg</span><span class="s4"> </span><span class="s2">xmlns</span><span class="s3">=</span><span class="s1">"http://www.w3.org/2000/svg"</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"h-8 w-8"</span><span class="s4"> </span><span class="s2">fill</span><span class="s3">=</span><span class="s1">"none"</span><span class="s4"> </span><span class="s2">viewBox</span><span class="s3">=</span><span class="s1">"0 0 24 24"</span><span class="s4"> </span><span class="s2">stroke</span><span class="s3">=</span><span class="s1">"currentColor"</span><span class="s3">&gt;</span></p>
-<p class="p3"><span class="s4"><span class="Apple-converted-space">                    </span></span><span class="s3">&lt;</span><span class="s6">path</span><span class="s4"> </span><span class="s1">stroke-linecap</span><span class="s3">=</span><span class="s5">"round"</span><span class="s4"> </span><span class="s1">stroke-linejoin</span><span class="s3">=</span><span class="s5">"round"</span><span class="s4"> </span><span class="s1">stroke-width</span><span class="s3">=</span><span class="s5">"2"</span><span class="s4"> </span><span class="s1">d</span><span class="s3">=</span><span class="s5">"M5 13l4 4L19 7"</span><span class="s4"> </span><span class="s3">/&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s3">&lt;/</span><span class="s6">svg</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;</span><span class="s6">h2</span><span class="s4"> </span><span class="s2">class</span><span class="s3">=</span><span class="s1">"text-2xl font-bold mb-2"</span><span class="s3">&gt;</span><span class="s4">登録完了！</span><span class="s3">&lt;/</span><span class="s6">h2</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;</span><span class="s6">p</span><span class="s1"> </span><span class="s2">class</span><span class="s3">=</span><span class="s5">"text-gray-600 mb-8"</span><span class="s3">&gt;</span><span class="s1">ありがとうございました。</span><span class="s3">&lt;</span><span class="s6">br</span><span class="s3">&gt;</span><span class="s1">ショップカードをご利用いただけます。</span><span class="s3">&lt;/</span><span class="s6">p</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;</span><span class="s6">a</span><span class="s4"> </span><span class="s2">id</span><span class="s3">=</span><span class="s1">"shopCardLink"</span><span class="s4"> </span><span class="s2">href</span><span class="s3">=</span><span class="s1">"#"</span><span class="s4"> </span><span class="s2">target</span><span class="s3">=</span><span class="s1">"_blank"</span></p>
-<p class="p4"><span class="s4"><span class="Apple-converted-space">                </span></span><span class="s2">class</span><span class="s3">=</span><span class="s1">"block w-full bg-gray-800 text-white font-bold py-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors"</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>ショップカードを開く</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s3">&lt;/</span><span class="s6">a</span><span class="s3">&gt;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s3">&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;/</span><span class="s6">div</span><span class="s3">&gt;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p2"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;</span><span class="s1">script</span><span class="s3">&gt;</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// ==========================================</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// 設定エリア (ここを書き換えてください)</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// ==========================================</span></p>
-<p class="p9"><span class="s1"><span class="Apple-converted-space">        </span></span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// 1. LINE Developersコンソールで取得したLIFF ID</span></p>
-<p class="p7"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s4"> </span><span class="s12">MY_LIFF_ID</span><span class="s4"> = </span><span class="s1">"2009010005-liWeUjh7"</span><span class="s4">;<span class="Apple-converted-space"> </span></span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// 2. Google Apps ScriptのウェブアプリURL</span></p>
-<p class="p7"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s4"> </span><span class="s12">GAS_API_URL</span><span class="s4"> = </span><span class="s1">"https://script.google.com/macros/s/AKfycbxKjjFQIjnsOrMji2SR9LGAXreqm2tB2py2ho8GTSWFEKWuupQh5QOxeH4ASFkqhI2t/exec"</span><span class="s4">;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// 3. ショップカードのURL (LINE公式アカウントの管理画面から取得)</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// 例: https://lin.ee/xxxxxxx</span></p>
-<p class="p7"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s4"> </span><span class="s12">SHOP_CARD_URL</span><span class="s4"> = </span><span class="s1">"https://lin.ee/example"</span><span class="s4">;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// ==========================================</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// アプリケーションロジック</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">        </span></span><span class="s1">// ==========================================</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s1"> loadingEl = document.getElementById(</span><span class="s9">'loading'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s1"> loadingSpinnerEl = document.getElementById(</span><span class="s9">'loading-spinner'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s1"> loadingTextEl = document.getElementById(</span><span class="s9">'loading-text'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s1"> formContainerEl = document.getElementById(</span><span class="s9">'form-container'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s1"> completeContainerEl = document.getElementById(</span><span class="s9">'complete-container'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s1"> userPictureEl = document.getElementById(</span><span class="s9">'userPicture'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s1"> lineDisplayNameEl = document.getElementById(</span><span class="s9">'lineDisplayName'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s1"> shopCardLinkEl = document.getElementById(</span><span class="s9">'shopCardLink'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">const</span><span class="s1"> submitBtn = document.getElementById(</span><span class="s9">'submitBtn'</span><span class="s1">);</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s7">let</span><span class="s1"> lineProfile = </span><span class="s7">null</span><span class="s1">;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s13">// 初期化処理</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span>window.onload = </span><span class="s7">async</span><span class="s1"> </span><span class="s7">function</span><span class="s1">() {</span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s1">// エラー回避: LIFF IDが初期値のままの場合は処理を止めて警告を表示</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s7">if</span><span class="s1"> (</span><span class="s12">MY_LIFF_ID</span><span class="s1"> === </span><span class="s9">"2009010005-liWeUjh7"</span><span class="s1">) {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s7">if</span><span class="s1">(loadingSpinnerEl) loadingSpinnerEl.style.display = </span><span class="s9">'none'</span><span class="s1">;</span></p>
-<p class="p7"><span class="s4"><span class="Apple-converted-space">                </span>loadingTextEl.innerHTML = </span><span class="s1">'&lt;span class="text-red-500 font-bold text-base block mb-2"&gt;⚠️ 準備が完了していません&lt;/span&gt;コード内の &lt;code&gt;MY_LIFF_ID&lt;/code&gt; を、LINE Developersコンソールで取得した実際のLIFF IDに書き換えてください。'</span><span class="s4">;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s7">return</span><span class="s1">;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s7">try</span><span class="s1"> {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s13">// LIFF初期化</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s7">await</span><span class="s1"> liff.init({ liffId: </span><span class="s12">MY_LIFF_ID</span><span class="s1"> });</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s7">if</span><span class="s1"> (!liff.isLoggedIn()) {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>liff.login();</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span></span><span class="s7">return</span><span class="s1">;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s13">// プロフィール取得</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>lineProfile = </span><span class="s7">await</span><span class="s1"> liff.getProfile();</span></p>
-<p class="p9"><span class="s1"><span class="Apple-converted-space">                </span></span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s13">// 画面への反映</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>lineDisplayNameEl.textContent = lineProfile.displayName;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s7">if</span><span class="s1"> (lineProfile.pictureUrl) {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>userPictureEl.src = lineProfile.pictureUrl;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>userPictureEl.classList.remove(</span><span class="s9">'hidden'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>}</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">                </span></span><span class="s1">// ローディング終了、フォーム表示</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>loadingEl.classList.add(</span><span class="s9">'hidden'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>formContainerEl.classList.remove(</span><span class="s9">'hidden'</span><span class="s1">);</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span>} </span><span class="s7">catch</span><span class="s1"> (err) {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>console.error(</span><span class="s9">'LIFF Init Error'</span><span class="s1">, err);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s7">if</span><span class="s1">(loadingSpinnerEl) loadingSpinnerEl.style.display = </span><span class="s9">'none'</span><span class="s1">;</span></p>
-<p class="p7"><span class="s4"><span class="Apple-converted-space">                </span>loadingTextEl.innerHTML = </span><span class="s1">'&lt;span class="text-red-500"&gt;LINEとの連携に失敗しました。&lt;/span&gt;&lt;br&gt;&lt;span class="text-xs text-gray-400 mt-2 block"&gt;エラー: '</span><span class="s4"> + err.message + </span><span class="s1">'&lt;/span&gt;'</span><span class="s4">;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span>};</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span></span><span class="s13">// 送信処理</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span>document.getElementById(</span><span class="s9">'registrationForm'</span><span class="s1">).addEventListener(</span><span class="s9">'submit'</span><span class="s1">, </span><span class="s7">async</span><span class="s1"> </span><span class="s7">function</span><span class="s1">(e) {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span>e.preventDefault();</span></p>
-<p class="p9"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s7">if</span><span class="s1"> (!lineProfile) </span><span class="s7">return</span><span class="s1">;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s7">const</span><span class="s1"> realName = document.getElementById(</span><span class="s9">'realName'</span><span class="s1">).value;</span></p>
-<p class="p9"><span class="s1"><span class="Apple-converted-space">            </span></span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">            </span></span><span class="s1">// ボタンをローディング状態に</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s7">const</span><span class="s1"> originalBtnText = submitBtn.innerHTML;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span>submitBtn.disabled = </span><span class="s7">true</span><span class="s1">;</span></p>
-<p class="p7"><span class="s4"><span class="Apple-converted-space">            </span>submitBtn.innerHTML = </span><span class="s1">'&lt;svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"&gt;&lt;circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"&gt;&lt;/circle&gt;&lt;path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"&gt;&lt;/path&gt;&lt;/svg&gt; 処理中...'</span><span class="s4">;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span></span><span class="s7">try</span><span class="s1"> {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s7">const</span><span class="s1"> data = {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>userId: lineProfile.userId,</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>displayName: lineProfile.displayName,</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>realName: realName</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>};</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s7">await</span><span class="s1"> fetch(</span><span class="s12">GAS_API_URL</span><span class="s1">, {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>method: </span><span class="s9">'POST'</span><span class="s1">,</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>mode: </span><span class="s9">'no-cors'</span><span class="s1">, </span><span class="s13">// 重要: GASへの直接POST用</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>headers: {</span></p>
-<p class="p7"><span class="s4"><span class="Apple-converted-space">                        </span></span><span class="s1">'Content-Type'</span><span class="s4">: </span><span class="s1">'application/json'</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>},</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                    </span>body: </span><span class="s12">JSON</span><span class="s1">.stringify(data)</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>});</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span></span><span class="s13">// 完了画面へ遷移</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>formContainerEl.classList.add(</span><span class="s9">'hidden'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>completeContainerEl.classList.remove(</span><span class="s9">'hidden'</span><span class="s1">);</span></p>
-<p class="p9"><span class="s1"><span class="Apple-converted-space">                </span></span></p>
-<p class="p6"><span class="s4"><span class="Apple-converted-space">                </span></span><span class="s1">// ショップカードのリンクを設定</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>shopCardLinkEl.href = </span><span class="s12">SHOP_CARD_URL</span><span class="s1">;</span></p>
-<p class="p9"><span class="s11"></span><br></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span>} </span><span class="s7">catch</span><span class="s1"> (error) {</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>console.error(</span><span class="s9">'Submit Error'</span><span class="s1">, error);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>alert(</span><span class="s9">'登録に失敗しました。もう一度お試しください。'</span><span class="s1">);</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>submitBtn.disabled = </span><span class="s7">false</span><span class="s1">;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">                </span>submitBtn.innerHTML = originalBtnText;</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">            </span>}</span></p>
-<p class="p5"><span class="s1"><span class="Apple-converted-space">        </span>});</span></p>
-<p class="p2"><span class="s4"><span class="Apple-converted-space">    </span></span><span class="s3">&lt;/</span><span class="s1">script</span><span class="s3">&gt;</span></p>
-<p class="p2"><span class="s3">&lt;/</span><span class="s1">body</span><span class="s3">&gt;</span></p>
-<p class="p2"><span class="s3">&lt;/</span><span class="s1">html</span><span class="s3">&gt;</span></p>
+<body class="text-gray-800">
+
+    <div id="app" class="max-w-md mx-auto min-h-screen bg-white shadow-lg overflow-hidden relative">
+
+        <!-- ヘッダー -->
+        <div class="bg-[#06c755] p-6 text-center text-white">
+            <h1 class="text-xl font-bold">会員登録</h1>
+            <p class="text-sm opacity-90 mt-1">ショップカード連携のために<br>お名前を教えてください</p>
+        </div>
+
+        <!-- 読み込み中表示 -->
+        <div id="loading" class="flex flex-col items-center justify-center py-20 px-6 text-center">
+            <div id="loading-spinner" class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mb-4"></div>
+            <p id="loading-text" class="text-gray-500 text-sm">LINEログイン中...</p>
+        </div>
+
+        <!-- 登録フォーム -->
+        <div id="form-container" class="hidden p-6">
+            <form id="registrationForm" class="space-y-6">
+                <!-- LINE情報表示エリア（読み取り専用） -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 flex items-center space-x-3">
+                    <img id="userPicture" src="" alt="Profile" class="w-10 h-10 rounded-full bg-gray-300 object-cover hidden">
+                    <div>
+                        <p class="text-xs text-gray-400">LINEアカウント</p>
+                        <p id="lineDisplayName" class="font-bold text-gray-700">取得中...</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="realName" class="block text-sm font-medium text-gray-700 mb-1">お名前 (フルネーム)</label>
+                    <input type="text" id="realName" name="realName" required placeholder="例：山田 太郎"
+                        class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#06c755] focus:border-transparent outline-none transition-colors">
+                    <p class="text-xs text-gray-500 mt-1">※顧客管理のために使用されます</p>
+                </div>
+
+                <button type="submit" id="submitBtn"
+                    class="w-full bg-[#06c755] hover:bg-[#05b34d] text-white font-bold py-4 rounded-lg shadow-md transition-transform transform active:scale-95 flex justify-center items-center">
+                    <span>登録してショップカードへ</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- 完了画面 -->
+        <div id="complete-container" class="hidden p-6 text-center pt-10">
+            <div class="w-16 h-16 bg-green-100 text-[#06c755] rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">登録完了！</h2>
+            <p class="text-gray-600 mb-8">ありがとうございました。<br>ショップカードをご利用いただけます。</p>
+
+            <a id="shopCardLink" href="#" target="_blank"
+                class="block w-full bg-gray-800 text-white font-bold py-4 rounded-lg shadow-md hover:bg-gray-700 transition-colors">
+                ショップカードを開く
+            </a>
+        </div>
+
+    </div>
+
+    <script>
+        // ==========================================
+        // 設定エリア (ここを書き換えてください)
+        // ==========================================
+
+        // 1. LINE Developersコンソールで取得したLIFF ID
+        const MY_LIFF_ID = "2009010005-liWeUjh7";
+
+        // 2. Google Apps ScriptのウェブアプリURL
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxKjjFQIjnsOrMji2SR9LGAXreqm2tB2py2ho8GTSWFEKWuupQh5QOxeH4ASFkqhI2t/exec";
+
+        // 3. ショップカードのURL (LINE公式アカウントの管理画面から取得)
+        // 例: https://lin.ee/xxxxxxx
+        const SHOP_CARD_URL = "https://lin.ee/example";
+
+        // ==========================================
+        // アプリケーションロジック
+        // ==========================================
+
+        const loadingEl = document.getElementById('loading');
+        const loadingSpinnerEl = document.getElementById('loading-spinner');
+        const loadingTextEl = document.getElementById('loading-text');
+        const formContainerEl = document.getElementById('form-container');
+        const completeContainerEl = document.getElementById('complete-container');
+        const userPictureEl = document.getElementById('userPicture');
+        const lineDisplayNameEl = document.getElementById('lineDisplayName');
+        const shopCardLinkEl = document.getElementById('shopCardLink');
+        const submitBtn = document.getElementById('submitBtn');
+
+        let lineProfile = null;
+
+        // 初期化処理
+        window.onload = async function() {
+            // エラー回避: LIFF IDが初期値のままの場合は処理を止めて警告を表示
+            if (MY_LIFF_ID === "2009010005-liWeUjh7") {
+                if(loadingSpinnerEl) loadingSpinnerEl.style.display = 'none';
+                loadingTextEl.innerHTML = '<span class="text-red-500 font-bold text-base block mb-2">⚠️ 準備が完了していません</span>コード内の <code>MY_LIFF_ID</code> を、LINE Developersコンソールで取得した実際のLIFF IDに書き換えてください。';
+                return;
+            }
+
+            try {
+                // LIFF初期化
+                await liff.init({ liffId: MY_LIFF_ID });
+
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+
+                // プロフィール取得
+                lineProfile = await liff.getProfile();
+
+                // 画面への反映
+                lineDisplayNameEl.textContent = lineProfile.displayName;
+                if (lineProfile.pictureUrl) {
+                    userPictureEl.src = lineProfile.pictureUrl;
+                    userPictureEl.classList.remove('hidden');
+                }
+
+                // ローディング終了、フォーム表示
+                loadingEl.classList.add('hidden');
+                formContainerEl.classList.remove('hidden');
+
+            } catch (err) {
+                console.error('LIFF Init Error', err);
+                if(loadingSpinnerEl) loadingSpinnerEl.style.display = 'none';
+                loadingTextEl.innerHTML = '<span class="text-red-500">LINEとの連携に失敗しました。</span><br><span class="text-xs text-gray-400 mt-2 block">エラー: ' + err.message + '</span>';
+            }
+        };
+
+        // 送信処理
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!lineProfile) return;
+
+            const realName = document.getElementById('realName').value;
+
+            // ボタンをローディング状態に
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 処理中...';
+
+            try {
+                const data = {
+                    userId: lineProfile.userId,
+                    displayName: lineProfile.displayName,
+                    realName: realName
+                };
+
+                await fetch(GAS_API_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // 重要: GASへの直接POST用
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                // 完了画面へ遷移
+                formContainerEl.classList.add('hidden');
+                completeContainerEl.classList.remove('hidden');
+
+                // ショップカードのリンクを設定
+                shopCardLinkEl.href = SHOP_CARD_URL;
+
+            } catch (error) {
+                console.error('Submit Error', error);
+                alert('登録に失敗しました。もう一度お試しください。');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        });
+    </script>
 </body>
 </html>
