@@ -69,11 +69,11 @@ def vac_formula():
 
 
 def doe_formula():
-    """個別判定シートが報告したDOEと日付が一致するか（イベント期間14日を適用済み）"""
+    """一覧シートのセクションBが判定したDOEと日付が一致するか。
+    セクションBは Allシートから直接判定しており、イベント期間14日の重複排除も済んでいる。"""
     L = "'VAE対象一覧'"
-    slot = f"INDEX({L}!$G${LIST_B_TOP}:$G${LIST_B_BOT},{BLK})"
-    d1 = f"INDEX({L}!$K${LIST_A_TOP}:$K${LIST_A_BOT},{slot})"
-    d2 = f"INDEX({L}!$M${LIST_A_TOP}:$M${LIST_A_BOT},{slot})"
+    d1 = f"INDEX({L}!$G${LIST_B_TOP}:$G${LIST_B_BOT},{BLK})"
+    d2 = f"INDEX({L}!$H${LIST_B_TOP}:$H${LIST_B_BOT},{BLK})"
     body = f"IFERROR(OR({DATE_SELF}={d1},{DATE_SELF}={d2}),FALSE)"
     return f"IF(COUNT({SELF})=0,FALSE,IF({IS_FP},{body},FALSE))"
 
@@ -84,7 +84,7 @@ LEGEND = (
     "　 個別判定シートが報告する日。イベント期間14日による重複排除まで適用済み。\n\n"
     "■ 薄い赤 ＝ JHAISの酸素化悪化基準（VAC）に合致した日\n"
     "　 ただしDOEには当たらないもの。直前のDOEから14日以内で新規報告の対象外か、\n"
-    "　 まだ個別判定シートが割り当てられていない患者です。\n"
+    "　 一覧シートのスキャン範囲より後ろのブロックです。\n"
     "　 VAE対象一覧シートで該当患者の判定を確認してください。"
 )
 

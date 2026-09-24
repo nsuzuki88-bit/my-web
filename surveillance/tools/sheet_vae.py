@@ -54,7 +54,7 @@ def build(wb, n):
     ws.sheet_view.showGridLines = False
 
     # ================= タイトル ======================================
-    ws["A1"] = f"⑤ VAE 判定ワークシート（自動作成 {n:02d}）　― 人工呼吸器装着 {n} 人目の患者に自動で割り当てられます ―"
+    ws["A1"] = f"⑤ VAE 判定ワークシート（自動作成 {n:02d}）　― 臨床所見に入力した {n} 人目のVAC患者に自動で割り当てられます ―"
     ws["A1"].font = F_TITLE
     ws["A1"].fill = fill(NAVY)
     ws.merge_cells("A1:X1")
@@ -68,9 +68,8 @@ def build(wb, n):
     L = f"'VAE対象一覧'"
     hdr = [
         ("ブロック番号",
-         f'=IFERROR(INDEX({L}!$A${LIST_B_TOP}:$A${LIST_B_BOT},'
-         f'MATCH({n},{L}!$G${LIST_B_TOP}:$G${LIST_B_BOT},0)),"")',
-         "auto", "※自動割当。特定の患者に固定したいときは番号を直接入力"),
+         f'=IFERROR(INDEX({L}!$B${LIST_A_TOP}:$B${LIST_A_BOT},$B$78),"")',
+         "auto", "※臨床所見に入力した患者から順に自動割当。固定したいときは番号を直接入力"),
         ("患者ID",
          f'=IF($C$4="","",IF(INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78+1)="","",'
          f'INDEX(All!$A$1:$A${ALL_LAST_ROW},$C$78+1)))', "auto", ""),
@@ -81,17 +80,17 @@ def build(wb, n):
          f'=IF($H$78="","",IF(INDEX({N_ALL},$F$78,$H$78)="","",INDEX({N_ALL},$F$78,$H$78)))',
          "auto", ""),
         ("年齢",
-         f'=IF($C$4="","",IF(INDEX({L}!$H${LIST_B_TOP}:$H${LIST_B_BOT},$C$4)="","",'
-         f'INDEX({L}!$H${LIST_B_TOP}:$H${LIST_B_BOT},$C$4)))', "auto",
+         f'=IF($C$4="","",IF(INDEX({L}!$K${LIST_B_TOP}:$K${LIST_B_BOT},$C$4)="","",'
+         f'INDEX({L}!$K${LIST_B_TOP}:$K${LIST_B_BOT},$C$4)))', "auto",
          '=IF($C$8="","",IF($C$8<18,"※18歳未満：成人VAEではなくPedVAEの定義で評価","成人VAE対象"))'),
         ("エピソード番号", 1, "input",
          '=IF($K$78="","",IF($K$78<=1,"このブロックのMVエピソードは1件","このブロックには全"&$K$78&"件のMVエピソードがあります"))'),
         ("MV1日目(挿管日)", "=$J$78", "auto", ""),
         ("MV日数(全体)", "=$L$78", "auto", ""),
         ("臓器提供同意日",
-         f'=IF($C$4="","",IF(INDEX({L}!$I${LIST_B_TOP}:$I${LIST_B_BOT},$C$4)="","",'
-         f'INDEX({L}!$I${LIST_B_TOP}:$I${LIST_B_BOT},$C$4)))', "auto",
-         "該当時のみ。同意取得日以降のDOEは報告しない（一覧シートI列で入力）"),
+         f'=IF($C$4="","",IF(INDEX({L}!$L${LIST_B_TOP}:$L${LIST_B_BOT},$C$4)="","",'
+         f'INDEX({L}!$L${LIST_B_TOP}:$L${LIST_B_BOT},$C$4)))', "auto",
+         "該当時のみ。同意取得日以降のDOEは報告しない（一覧シートセクションBのL列で入力）"),
     ]
     for i, (label, val, kind, note) in enumerate(hdr):
         r = 4 + i
@@ -252,7 +251,9 @@ def build(wb, n):
         4:  ('FiO2行',          f'=IF($C$78="","",$C$78+1)'),
         5:  ('PEEP行',          f'=IF($C$78="","",$C$78+2)'),
         6:  ('部屋行',          f'=IF($C$78="","",$C$78+4)'),
-        7:  ('臨床所見基準行',  f'=IF($C$4="","",6+8*($C$4-1))'),
+        2:  ('臨床所見スロット',
+             f"=IFERROR(MATCH({n},'VAE対象一覧'!$M${LIST_A_TOP}:$M${LIST_A_BOT},0),\"\")"),
+        7:  ('臨床所見基準行',  f'=IF($B$78="","",6+8*($B$78-1))'),
         8:  ('開始列',          f'=IFERROR(IF(INDEX($N$78:${gl(13+NEPISODE)}$78,1,$C$9)=0,"",'
                                 f'INDEX($N$78:${gl(13+NEPISODE)}$78,1,$C$9)),"")'),
         9:  ('エピソード日数',  f'=IF($H$78="",0,MIN(SUMPRODUCT(MIN(IF((1-{mvb})*'

@@ -4,7 +4,8 @@ import sys, openpyxl
 from openpyxl.utils import get_column_letter as gl
 import common, build
 wb0 = openpyxl.load_workbook('new2026.xlsm', keep_vba=True, read_only=True)
-common.configure(**build.probe(wb0['All'])); common.configure(NSHEET=60)
+g=build.probe(wb0['All']); g['NBLK']=min(g['NBLK'], common.NBLK_MAX)
+common.configure(**g); common.configure(NCLIN=40, NSHEET=20)
 from common import *
 import sheet_all, ref_vae as R
 

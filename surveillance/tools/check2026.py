@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
-"""再計算済みワークブックの結果を、Python独立実装（ref_vae.py）と突き合わせる"""
+"""再計算済みワークブックを Python独立実装（ref_vae.py）と突き合わせる。
+
+  セクションB … 全ブロックの MV日数・DOE・VAC判定
+  セクションA … VAC患者の一覧と、臨床所見・個別判定シートの割当
+  臨床所見   … VAC患者だけがスロットに入っているか
+"""
 import datetime as dt
 import sys, openpyxl
 import ref_vae as R
-from common import (LIST_A_TOP, LIST_B_TOP, NSHEET, NBLK, MV_MIN)
+from common import (LIST_A_TOP, LIST_A_BOT, LIST_B_TOP, LIST_B_BOT,
+                    NSHEET, NCLIN, NBLK, MV_MIN, clin_base, CN)
 
 ok = ng = 0
 
@@ -21,81 +27,78 @@ def chk(label, got, want):
 
 def main(calc, src):
     global ok, ng
-    dates, ref = R.analyse(src)
+    dates, ref = R.analyse_global(src)
     refmap = {r["k"]: r for r in ref}
-    elig = [r for r in ref if r["mvtotal"] >= MV_MIN]
+    vac = [r for r in ref if r["doe"]]
 
     wb = openpyxl.load_workbook(calc, data_only=True)
     lst = wb["VAE対象一覧"]
+    clin = wb["臨床所見"]
 
-    # ---- セクションB：全ブロックのMV日数 ----------------------------
-    print("=== セクションB：MV日数（全ブロック）===")
-    mism = 0
+    # ---- セクションB ------------------------------------------------
+    print("=== セクションB：全ブロックのスキャンとVAC判定 ===")
+    want_vacno = {r["k"]: i for i, r in enumerate(vac, 1)}
     for k in range(1, NBLK + 1):
         r = LIST_B_TOP + k - 1
-        got = lst.cell(r, 4).value or 0
-        want = refmap[k]["mvtotal"] if k in refmap else 0
-        if got != want:
-            mism += 1
-            if mism <= 5:
-                print(f"  NG  block{k} MV日数: got {got} want {want}")
+        w = refmap[k]
+        chk(f"block{k} MV日数", lst.cell(r, 4).value or 0, w["mvtotal"])
+        chk(f"block{k} 初回MV日", lst.cell(r, 5).value, w["first_mv"] if w["mvtotal"] else None)
+        chk(f"block{k} 最終MV日", lst.cell(r, 6).value, w["last_mv"] if w["mvtotal"] else None)
+        d = w["doe"]
+        chk(f"block{k} DOE①", lst.cell(r, 7).value, d[0] if len(d) > 0 else None)
+        chk(f"block{k} DOE②", lst.cell(r, 8).value, d[1] if len(d) > 1 else None)
+        chk(f"block{k} 判定", lst.cell(r, 9).value, "VAC" if d else None)
+        chk(f"block{k} VAC番号", lst.cell(r, 10).value, want_vacno.get(k))
+    print(f"  {NBLK}ブロック照合、VAC判定 {len(vac)}名")
+
+    # ---- セクションA ------------------------------------------------
+    print("\n=== セクションA：VAC患者の一覧 ===")
+    for n in range(1, NCLIN + 1):
+        r = LIST_A_TOP + n - 1
+        w = vac[n - 1] if n <= len(vac) else None
+        if w is None:
+            chk(f"slot{n} 空", lst.cell(r, 2).value, None)
+            chk(f"slot{n} 臨床所見欄も空", lst.cell(r, 12).value, None)
+            continue
+        chk(f"slot{n} ブロック", lst.cell(r, 2).value, w["k"])
+        chk(f"slot{n} 患者ID", lst.cell(r, 3).value, w["pid"])
+        chk(f"slot{n} 氏名", lst.cell(r, 4).value, w["name"])
+        chk(f"slot{n} MV1日目", lst.cell(r, 6).value, w["ep1_start"])
+        chk(f"slot{n} MV日数", lst.cell(r, 7).value, w["mvtotal"])
+        chk(f"slot{n} DOE①", lst.cell(r, 8).value, w["doe"][0])
+        # 臨床所見が未入力なら基本判定のVAC、入力済みならIVAC/PVAPに格上げされうる
+        judge = lst.cell(r, 9).value
+        if lst.cell(r, 12).value == "入力あり":
+            chk(f"slot{n} 判定①", judge in ("VAC", "IVAC", "PVAP"), True)
         else:
-            ok += 1
-    if mism:
-        ng += mism
-    print(f"  {NBLK}ブロック照合、不一致 {mism} 件")
+            chk(f"slot{n} 判定①", judge, "VAC")
+        print(f"  slot{n}: block{w['k']} {w['pid']} {w['name']}  "
+              f"DOE={w['doe'][0]:%m/%d}  判定={lst.cell(r,9).value}  "
+              f"臨床所見={lst.cell(r,12).value}  判定シート={lst.cell(r,13).value!r}")
 
-    # ---- セクションB：割当No ----------------------------------------
-    print("\n=== セクションB：判定シートの割当 ===")
-    want_slot = {r["k"]: i for i, r in enumerate(elig, 1)}
-    for k in range(1, NBLK + 1):
-        r = LIST_B_TOP + k - 1
-        chk(f"block{k} 割当No", lst.cell(r, 7).value, want_slot.get(k))
-    print(f"  MV{MV_MIN}日以上: {len(elig)}名 → slot1..{len(elig)}")
+    # ---- 臨床所見 ----------------------------------------------------
+    print("\n=== 臨床所見：VAC患者だけがスロットに入っているか ===")
+    for n in range(1, NCLIN + 1):
+        b = clin_base(n)
+        w = vac[n - 1] if n <= len(vac) else None
+        chk(f"臨床所見 slot{n} ブロック", clin.cell(b + 1, 1).value, w["k"] if w else None)
+        chk(f"臨床所見 slot{n} 患者ID", clin.cell(b + 2, 1).value, w["pid"] if w else None)
+        chk(f"臨床所見 slot{n} 氏名", clin.cell(b + 3, 1).value, w["name"] if w else None)
+        chk(f"臨床所見 slot{n} DOE", clin.cell(b + 4, 1).value, w["doe"][0] if w else None)
+    print(f"  {NCLIN}スロット照合（VAC患者{len(vac)}名のみ埋まる）")
 
-    # ---- セクションA：各判定シート ----------------------------------
-    print("\n=== セクションA：個別判定シート ===")
+    # ---- 個別判定シート ----------------------------------------------
+    print("\n=== 個別判定シート：臨床所見の入力がある患者だけ ===")
+    entered = [n for n in range(1, len(vac) + 1)
+               if lst.cell(LIST_A_TOP + n - 1, 12).value == "入力あり"]
+    print(f"  臨床所見に入力がある患者: {len(entered)}名")
     for i in range(1, NSHEET + 1):
-        r = LIST_A_TOP + i - 1
-        blk = lst.cell(r, 3).value
-        want = elig[i - 1] if i <= len(elig) else None
-        if want is None:
-            chk(f"slot{i} 未割当", blk, None)
-            continue
-        chk(f"slot{i} ブロック番号", blk, want["k"])
-        chk(f"slot{i} 患者ID", lst.cell(r, 4).value, want["pid"])
-        chk(f"slot{i} 氏名", lst.cell(r, 5).value, want["name"])
-        chk(f"slot{i} MV1日目", lst.cell(r, 7).value, want["ep1_start"])
-        chk(f"slot{i} MV日数", lst.cell(r, 8).value, want["mvtotal"])
-        chk(f"slot{i} エピソード数", lst.cell(r, 9).value, want["neps"])
-        d = want["doe"]
-        chk(f"slot{i} DOE①", lst.cell(r, 11).value, d[0] if len(d) > 0 else None)
-        chk(f"slot{i} 判定①", lst.cell(r, 12).value, "VAC" if len(d) > 0 else None)
-        chk(f"slot{i} DOE②", lst.cell(r, 13).value, d[1] if len(d) > 1 else None)
-        chk(f"slot{i} 判定②", lst.cell(r, 14).value, "VAC" if len(d) > 1 else None)
-
-    # ---- DOEが出た患者の判定シート本体 ------------------------------
-    print("\n=== DOEが出た患者の判定シート ===")
-    for i, want in enumerate(elig, 1):
-        if not want["doe"]:
-            continue
         ws = wb[f"VAE-{i:02d}"]
-        print(f"  VAE-{i:02d}: block{want['k']} ID={want['pid']} {want['name']}")
-        chk(f"  VAE-{i:02d} 患者ID", ws["C5"].value, want["pid"])
-        chk(f"  VAE-{i:02d} 氏名", ws["C6"].value, want["name"])
-        chk(f"  VAE-{i:02d} MV1日目", ws["C10"].value, want["ep1_start"])
-        chk(f"  VAE-{i:02d} 本エピソード日数", ws["K5"].value, want["ep1_len"])
-        chk(f"  VAE-{i:02d} 検出VAE件数", ws["K7"].value, len(want["doe"]))
-        chk(f"  VAE-{i:02d} DOE①", ws["K8"].value, want["doe"][0])
-        chk(f"  VAE-{i:02d} 判定①", ws["K9"].value, "VAC")
-        # 表本体のFiO2/PEEPがAllシートと一致するか
-        b = [x for x in R.read_blocks(src)[1] if x["k"] == want["k"]][0]
-        eps, _ = R.episodes(b)
-        s, L = eps[0]
-        for d in range(1, min(L, 10) + 1):
-            row = 14 + d
-            chk(f"  VAE-{i:02d} MV{d}日目 PEEP", ws.cell(row, 3).value, b["p"][s + d - 1])
-            chk(f"  VAE-{i:02d} MV{d}日目 FiO2", ws.cell(row, 4).value, b["f"][s + d - 1])
+        want = vac[entered[i - 1] - 1] if i <= len(entered) else None
+        chk(f"VAE-{i:02d} ブロック", ws["C4"].value, want["k"] if want else None)
+        if want:
+            chk(f"VAE-{i:02d} 患者ID", ws["C5"].value, want["pid"])
+            chk(f"VAE-{i:02d} DOE①", ws["K8"].value, want["doe"][0])
 
     print(f"\n==== ok={ok}  NG={ng} ====")
     return ng

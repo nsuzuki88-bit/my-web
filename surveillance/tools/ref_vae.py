@@ -129,3 +129,53 @@ if __name__ == "__main__":
         print(f"  slot{i:2d} block{r['k']:4d} ID={r['pid']} {r['name']}  "
               f"MV{r['mvtotal']}日 ep{r['neps']}  ep1={r['ep1_start'].strftime('%m/%d')}"
               f"({r['ep1_len']}日)  DOE={d}")
+
+
+def vac_days_global(blk):
+    """全エピソードを通して、VAC（酸素化悪化）の条件を満たす日のindexを返す。
+    一覧シートのセクションBと同じく、暦日ベースで走査する。"""
+    n = len(blk["v"])
+    mv = [is_mv(blk["v"][i], blk["f"][i], blk["p"][i]) for i in range(n)]
+    F = [norm_fio2(x) for x in blk["f"]]
+    P = [adj_peep(x) for x in blk["p"]]
+    out = []
+    for i in range(2, n - 1):
+        if not (mv[i - 2] and mv[i - 1] and mv[i] and mv[i + 1]):
+            continue           # 4日連続でMV日＝同一エピソード内かつMV3日目以降
+        f2, f1, f0, fp = F[i - 2], F[i - 1], F[i], F[i + 1]
+        p2, p1, p0, pp = P[i - 2], P[i - 1], P[i], P[i + 1]
+        if ((None not in (f2, f1, f0, fp) and f1 <= f2
+             and f0 - f2 >= FIO2_RISE - 1e-9 and fp - f2 >= FIO2_RISE - 1e-9)
+                or (None not in (p2, p1, p0, pp) and p1 <= p2
+                    and p0 - p2 >= PEEP_RISE - 1e-9 and pp - p2 >= PEEP_RISE - 1e-9)):
+            out.append(i)
+    return out
+
+
+def does_global(blk, mvtotal):
+    """セクションBが出すDOE（暦日ベース・イベント期間14日を適用）"""
+    if mvtotal < MV_MIN:
+        return []
+    doe = []
+    for i in vac_days_global(blk):
+        if doe and i - doe[-1] < EVENT_PERIOD:
+            continue
+        doe.append(i)
+    return doe
+
+
+def analyse_global(path):
+    """ブロックごとに MV日数・エピソード・暦日ベースのDOE を返す"""
+    dates, blocks = read_blocks(path)
+    res = []
+    for blk in blocks:
+        eps, mvtotal = episodes(blk)
+        doe = does_global(blk, mvtotal)
+        res.append(dict(k=blk["k"], pid=blk["pid"], name=blk["name"],
+                        mvtotal=mvtotal, neps=len(eps),
+                        ep1_start=dates[eps[0][0]] if eps else None,
+                        ep1_len=eps[0][1] if eps else 0,
+                        first_mv=dates[eps[0][0]] if eps else None,
+                        last_mv=dates[eps[-1][0] + eps[-1][1] - 1] if eps else None,
+                        doe=[dates[i] for i in doe]))
+    return dates, res

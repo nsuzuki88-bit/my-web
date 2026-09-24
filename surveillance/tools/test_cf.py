@@ -10,7 +10,7 @@ from common import *
 import sheet_all
 
 DAYS = 25                      # 4/1 〜 4/25 を検査
-BLOCKS = range(1, 13)
+BLOCKS = range(1, 14)
 
 # ブロック -> (DOEであるべきMV日のリスト, VAC基準に合致するがDOEではないMV日のリスト)
 EXPECT = {
@@ -26,6 +26,7 @@ EXPECT = {
     10: ([3], []),             # FiO2ちょうど+20ポイント（％入力）
     11: ([3], []),             # FiO2ちょうど+0.20（小数入力）
     12: ([3], []),             # PEEPちょうど+3cmH2O
+    13: ([], []),              # V無の日はMV日にしない
 }
 
 

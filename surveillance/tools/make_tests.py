@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
-"""NHSN/JHAIS の教科書例をAllシートに注入してテスト用ブックを作る"""
+"""NHSN/JHAIS の教科書例をAllシートに注入してテスト用ブックを作る。
+
+臨床所見は「VACと判定された患者のスロット」に入るため、Allを書いたあとに
+ref_vae.py でVACの並び順を求めてから、該当スロットに入力する。
+"""
 import openpyxl
 from openpyxl.utils import get_column_letter as gl
 from common import *
+import ref_vae as R
 
 # (ブロック, 説明, V有無の書き方, FiO2リスト, PEEPリスト)  ※Noneはその日空欄
 CASES = [
@@ -32,21 +37,23 @@ CASES = [
      [0.4, 0.4, 0.6, 0.6], [5, 5, 5, 5]),
     (12, "PEEPちょうど+3cmH2O（境界）", "V有",
      [40, 40, 40, 40], [5, 5, 8, 8]),
+    (13, "V無の日はFiO2/PEEPがあってもMV日にしない", "V無",
+     [40, 40, 40, 60, 60, 60], [5, 5, 5, 5, 5, 5]),
 ]
 
-# 臨床所見： (ブロック, MV日, 行オフセット, 値)
+# 臨床所見に入れる所見： (ブロック, MV日, 行オフセット, 値)
 CLIN = [
     (8, 4, 0, 38.5),        # 最高体温 38.5℃
     (8, 5, 4, "はい"),      # 新規抗菌薬開始
     (9, 4, 0, 38.5),
     (9, 5, 4, "はい"),
-    (9, 5, 6, "基準1"),     # PVAP基準1
+    (9, 5, 6, "基準1"),     # PVAP基準1 → PVAPへ格上げ
 ]
 
 
 def main(src="out.xlsx", dst="test.xlsx"):
     wb = openpyxl.load_workbook(src)
-    al, cl, lst = wb["All"], wb["臨床所見"], wb["VAE対象一覧"]
+    al, lst = wb["All"], wb["VAE対象一覧"]
 
     for k, desc, vmark, fio2, peep in CASES:
         al.cell(all_id(k), 1, f"T{k:02d}")          # 患者ID
@@ -60,14 +67,24 @@ def main(src="out.xlsx", dst="test.xlsx"):
             al.cell(all_f(k), c, f)
             al.cell(all_p(k), c, p)
             al.cell(all_rm(k), c, "A-1")
-        lst.cell(LIST_B_TOP + k - 1, 8, 70)          # 年齢
-        lst.cell(LIST_B_TOP + k - 1, 10, desc)       # 備考
+        lst.cell(LIST_B_TOP + k - 1, 11, 70)         # 年齢（セクションB K列）
+        lst.cell(LIST_B_TOP + k - 1, 13, desc)       # 備考（M列）
+    wb.save(dst)
 
+    # VACの並び順を求め、該当スロットに臨床所見を入力する
+    _, ref = R.analyse_global(dst)
+    vac_rank = {r["k"]: i for i, r in enumerate(
+        [x for x in ref if x["doe"]], 1)}
+    wb = openpyxl.load_workbook(dst)
+    cl = wb["臨床所見"]
     for k, day, off, val in CLIN:
-        cl.cell(clin_base(k) + off, C0 + day - 1, val)
-
+        n = vac_rank.get(k)
+        assert n, f"ブロック{k}はVAC判定されていないため臨床所見に入力できません"
+        cl.cell(clin_base(n) + off, C0 + day - 1, val)
     wb.save(dst)
     print("wrote", dst)
+    print("  VACと判定されたブロック→スロット:", vac_rank)
+    return vac_rank
 
 
 if __name__ == "__main__":

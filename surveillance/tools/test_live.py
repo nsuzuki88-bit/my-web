@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
-"""第2弾：入力を書き換えたときに判定が追従するか（＝『入力するたびに反映』）を検証"""
+"""入力を書き換えたときに、しぼり込みの各段が追従するかを検証する
+
+  All を直す → VAC判定が変わる → 臨床所見のスロットが入れ替わる
+  → 個別判定シートの割当が変わる
+"""
 import datetime as dt
-import openpyxl, subprocess, sys
-from common import *
+import sys, openpyxl
+from common import (LIST_A_TOP, LIST_B_TOP, NCLIN, NSHEET, clin_base,
+                    C0, all_v, all_f, all_p, all_id, all_name)
 
 D = lambda m, d: dt.datetime(2025, m, d)
 ok = ng = 0
@@ -13,42 +18,34 @@ def chk(label, got, want):
     g = got.date() if isinstance(got, dt.datetime) else got
     w = want.date() if isinstance(want, dt.datetime) else want
     if g == w or (g in (None, "") and w in (None, "")):
-        ok += 1; print(f"  ok   {label}: {got!r}")
+        ok += 1
+        print(f"  ok   {label}: {got!r}")
     else:
-        ng += 1; print(f"  NG   {label}: got {got!r} want {want!r}")
+        ng += 1
+        print(f"  NG   {label}: got {got!r} want {want!r}")
 
 
 def mutate(src, dst):
     wb = openpyxl.load_workbook(src)
-    al, cl, lst = wb["All"], wb["臨床所見"], wb["VAE対象一覧"]
+    al, cl = wb["All"], wb["臨床所見"]
 
-    # ① ブロック3：FiO2の上昇幅を 20→5 ポイントに下げる → VAC は消えるはず
-    for d in (4, 5, 6):
-        al.cell(all_f(3), C0 + d - 1, 45)
+    # ① ブロック10：FiO2の上昇を 20→5 ポイントに下げる → VACでなくなる
+    for d in (3, 4):
+        al.cell(all_f(10), C0 + d - 1, 45)
 
-    # ② ブロック1：PEEP上昇を 3→2 cmH2O に下げる → VAC は消えるはず
-    for d in (5, 6):
-        al.cell(all_p(1), C0 + d - 1, 7)
-
-    # ③ ブロック6：第2エピソード（4/8開始・8日間）に FiO2悪化を入れる
-    #    MV日 1,2=40 / 3,4=70 → 第2エピソードのMV3日目がDOE = 4/10
-    for d, v in ((8, 40), (9, 40), (10, 70), (11, 70), (12, 40),
-                 (13, 40), (14, 40), (15, 40)):
-        al.cell(all_f(6), C0 + d - 1, v)
-    wb["VAE-06"]["C9"] = 2                      # 対象エピソードを2件目に切替
-
-    # ④ ブロック9：PVAP基準を消す → PVAP から IVAC に格下げされるはず
-    cl.cell(clin_base(9) + 6, C0 + 5 - 1).value = None
-
-    # ⑤ 新規患者をブロック20に追加 → VAE-12 に自動で割り当たるはず
+    # ② ブロック20に新規患者を追加 → 新しいVACとして末尾に並ぶ
     al.cell(all_id(20), 1, "T20")
     al.cell(all_name(20), 1, "検証20")
-    #    FiO2 40,40,40,70,70 → ベースラインはMV2-3日目、DOEはMV4日目（4/4）
-    for d, (f, p) in enumerate([(40, 5), (40, 5), (40, 5), (70, 5), (70, 5)]):
+    for d, (f, p) in enumerate([(40, 5), (40, 5), (70, 5), (70, 5)]):
         al.cell(all_v(20), C0 + d, "V有")
         al.cell(all_f(20), C0 + d, f)
         al.cell(all_p(20), C0 + d, p)
-    lst.cell(LIST_B_TOP + 20 - 1, 8, 65)
+
+    # ③ ブロック9（VAC 6人目）のPVAP基準を削除 → PVAP から IVAC へ
+    cl.cell(clin_base(6) + 6, C0 + 5 - 1).value = None
+
+    # ④ スロット7（ブロック11・DOE 4/3）にDOEから離れた日付で入力 → 警告が出るはず
+    cl.cell(clin_base(7) + 0, C0 + 20 - 1, 38.2)
 
     wb.save(dst)
     print("wrote", dst)
@@ -56,38 +53,41 @@ def mutate(src, dst):
 
 def verify(path):
     wb = openpyxl.load_workbook(path, data_only=True)
-    lst = wb["VAE対象一覧"]
+    lst, clin = wb["VAE対象一覧"], wb["臨床所見"]
+    A = lambda n, c: lst.cell(LIST_A_TOP + n - 1, c).value
+    Bk = lambda k, c: lst.cell(LIST_B_TOP + k - 1, c).value
 
-    print("\n① ブロック3：FiO2の上昇を20→5ポイントに変更")
-    chk("  判定①が消える", wb["VAE-03"]["K9"].value, "")
+    print("\n① ブロック10：FiO2の上昇を20→5ポイントに変更 → VACでなくなる")
+    chk("  セクションB 判定", Bk(10, 9), None)
+    chk("  セクションB VAC番号", Bk(10, 10), None)
 
-    print("\n② ブロック1：PEEPの上昇を3→2cmH2Oに変更")
-    chk("  判定①が消える", wb["VAE-01"]["K9"].value, "")
+    print("\n② ブロック20に患者を追加 → 新しいVACとして末尾に並ぶ")
+    chk("  セクションB 判定", Bk(20, 9), "VAC")
+    chk("  セクションB DOE①", Bk(20, 7), D(4, 3))
 
-    print("\n③ ブロック6：第2エピソード（C9=2）に切替")
-    w = wb["VAE-06"]
-    chk("  MV1日目", w["C10"].value, D(4, 8))
-    chk("  本エピソードMV日数", w["K5"].value, 8)
-    chk("  DOE①", w["K8"].value, D(4, 10))
-    chk("  判定①", w["K9"].value, "VAC")
+    print("\n VAC患者の並び（ブロック番号）")
+    got = [A(n, 2) for n in range(1, NCLIN + 1) if A(n, 2) is not None]
+    chk("  並び順", got, [1, 3, 4, 5, 8, 9, 11, 12, 20])
 
-    print("\n④ ブロック9：PVAP基準を削除 → IVACへ格下げ")
-    chk("  判定①", wb["VAE-08"]["K9"].value, "IVAC")
+    print("\n③ ブロック9（6人目）のPVAP基準を削除 → IVACへ格下げ")
+    chk("  判定①", A(6, 9), "IVAC")
+    chk("  ブロック番号", A(6, 2), 9)
 
-    print("\n⑤ ブロック20に患者を追加 → VAE-12 が自動で埋まる")
-    w = wb["VAE-12"]
-    chk("  ブロック番号", w["C4"].value, 20)
-    chk("  患者ID", w["C5"].value, "T20")
-    chk("  MV1日目", w["C10"].value, D(4, 1))
-    chk("  DOE①", w["K8"].value, D(4, 4))
-    chk("  判定①", w["K9"].value, "VAC")
+    print("\n 臨床所見に入力がある患者と判定シートの割当")
+    chk("  5人目(ブロック8) 臨床所見", A(5, 12), "入力あり")
+    chk("  5人目 判定シート番号", A(5, 13), 1)
+    chk("  6人目(ブロック9) 判定シート番号", A(6, 13), 2)
+    chk("  7人目(ブロック11) 判定シート番号", A(7, 13), 3)
+    chk("  8人目(ブロック12) 臨床所見", A(8, 12), "未入力")
+    chk("  VAE-01 のブロック", wb["VAE-01"]["C4"].value, 8)
+    chk("  VAE-02 のブロック", wb["VAE-02"]["C4"].value, 9)
+    chk("  VAE-03 のブロック", wb["VAE-03"]["C4"].value, 11)
+    chk("  VAE-04 は未割当", wb["VAE-04"]["C4"].value, None)
 
-    print("\n⑥ 一覧セクションB：初回／最終MV日")
-    r5 = LIST_B_TOP + 5 - 1
-    chk("  ブロック5 初回MV日", lst.cell(r5, 5).value, D(4, 1))
-    chk("  ブロック5 最終MV日", lst.cell(r5, 6).value, D(4, 20))
-    r6 = LIST_B_TOP + 6 - 1
-    chk("  ブロック6 最終MV日", lst.cell(r6, 6).value, D(4, 15))
+    print("\n④ DOEから離れた日に入力したスロット7 → 警告が出る")
+    chk("  スロット5（正常）", clin.cell(clin_base(5) + 5, 1).value, None)
+    chk("  スロット7（DOE 4/3 に対し 4/20 に入力）",
+        clin.cell(clin_base(7) + 5, 1).value, "⚠割当確認")
 
     print(f"\n==== ok={ok}  NG={ng} ====")
     return ng

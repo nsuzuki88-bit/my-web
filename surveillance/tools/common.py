@@ -16,8 +16,10 @@ BLOCK0 = 6                 # 1ブロック目の先頭行（＝V有無行）
 BSTEP = 5                  # 1ブロックの行数
 NBLK = 399                 # Allシートの患者ブロック数
 ALL_LAST_ROW = 2000
-NSHEET = 40                # 個別判定シートの枚数 VAE-01 .. VAE-nn
-MV_MIN = 4                 # 判定シートを割り当てるMV日数の下限
+NSHEET = 20                # 個別判定シートの枚数 VAE-01 .. VAE-nn
+NCLIN = 40                 # 臨床所見シートのスロット数（＝VAC判定された患者の上限）
+NBLK_MAX = 1200            # 一覧セクションBでスキャンするブロック数の上限
+MV_MIN = 4                 # VAC判定を行うMV日数の下限
                            # （JHAIS：VAEの対象は人工呼吸を暦日で4日以上）
 
 
@@ -28,13 +30,16 @@ def configure(**kw):
         assert k in g, k
         g[k] = v
     g["NDAYS"] = g["CN"] - g["C0"] + 1
-    g["CLIN_LAST_ROW"] = clin_base(g["NBLK"]) + 7
-    g["LIST_A_BOT"] = g["LIST_A_TOP"] + g["NSHEET"] - 1
+    g["CLIN_LAST_ROW"] = clin_base(g["NCLIN"]) + 7
+    g["LIST_A_BOT"] = g["LIST_A_TOP"] + g["NCLIN"] - 1
     g["LIST_B_HDR"] = g["LIST_A_BOT"] + 3
     g["LIST_B_TOP"] = g["LIST_B_HDR"] + 2
     g["LIST_B_BOT"] = g["LIST_B_TOP"] + g["NBLK"] - 1
     g["LIST_C_HDR"] = g["LIST_B_BOT"] + 3
     g["LIST_C_TOP"] = g["LIST_C_HDR"] + 2
+    g["LIST_D_HDR"] = g["LIST_C_TOP"] + 8
+    g["LIST_D_TOP"] = g["LIST_D_HDR"] + 2
+    g["LIST_D_BOT"] = g["LIST_D_TOP"] + g["NSHEET"] - 1
 
 
 # Allシートの各行（k＝ブロック番号）
@@ -57,8 +62,8 @@ CLIN_ROWS = [
     ("PVAP基準",            "list_pvap"),
     ("検体・菌名・結果メモ", "text"),
 ]
-def clin_base(k): return 6 + 8 * (k - 1)
-CLIN_LAST_ROW = clin_base(NBLK) + 7
+def clin_base(n): return 6 + 8 * (n - 1)     # n＝VAC患者の通し番号（ブロック番号ではない）
+CLIN_LAST_ROW = clin_base(NCLIN) + 7
 
 # ---- 個別判定シート -------------------------------------------------
 MVROWS = 60                # MV 1日目 .. 60日目
@@ -68,23 +73,35 @@ R_CALC = 78                # 内部計算スカラー行
 NEPISODE = 6               # 1患者あたり判定できるMVエピソード数
 
 # ---- 一覧シート -----------------------------------------------------
-LIST_A_TOP = 7                        # セクションA 先頭行（VAE-01..）
-LIST_A_BOT = LIST_A_TOP + NSHEET - 1
+LIST_A_TOP = 7                        # セクションA 先頭行（VAC患者の一覧）
+LIST_A_BOT = LIST_A_TOP + NCLIN - 1
 LIST_B_HDR = LIST_A_BOT + 3           # セクションB 見出し
 LIST_B_TOP = LIST_B_HDR + 2           # ブロック1
 LIST_B_BOT = LIST_B_TOP + NBLK - 1
 LIST_C_HDR = LIST_B_BOT + 3           # セクションC 見出し（月別自動集計）
 LIST_C_TOP = LIST_C_HDR + 2
+LIST_D_HDR = LIST_C_TOP + 8           # セクションD 見出し（個別判定シートの判定）
+LIST_D_TOP = LIST_D_HDR + 2
+LIST_D_BOT = LIST_D_TOP + NSHEET - 1
 
 # ---- 名前付き範囲 ---------------------------------------------------
 N_ALL  = "rALL"    # All!$A$1:$NC$<last>   … 絶対列番号でINDEXする用
 N_ALLD = "rALLD"   # All!$C$1:$NC$<last>   … 日付列のみ（配列演算用）
 N_CLIN = "rCLIN"   # 臨床所見!$A$1:$NC$<last>
+# VAC判定は当日・前日・前々日・翌日を同時に見るため、同じ長さの配列を4本そろえる。
+# 判定対象の日は日付列の3日目以降（前々日が日付列に収まる日）なので、
+# 当日の範囲を E列から始める。こうするとどの範囲もA列・B列のラベル文字
+#（"FiO2" "PEEP" "氏名" 等）を含まないため、引き算で #VALUE! にならない。
+N_D0 = "rD0"       # 当日     E..NC
+N_D1 = "rD1"       # 前日     D..NB
+N_D2 = "rD2"       # 前々日   C..NA
+N_DP = "rDP"       # 翌日     F..ND
 
 # ---- 判定のしきい値 -------------------------------------------------
 FIO2_RISE = 0.2    # FiO2 の上昇幅（小数。20ポイント＝0.2）
 PEEP_RISE = 3      # PEEP の上昇幅（cmH2O）
 PEEP_FLOOR = 5     # PEEP 0〜5 は 5 として扱う
+EVENT_PERIOD = 14  # DOEから14日間は新たなVAEを判定しない
 
 # ---- 配色（元ワークシートの配色を踏襲）------------------------------
 NAVY   = "1F4E79"   # 見出し（濃紺）
@@ -158,3 +175,69 @@ def mv_scalar(v, f, p):
 def cf_fill(hexrgb):
     """条件付き書式（dxf）用の塗りつぶし。元ファイルと同じく bgColor のみ指定する。"""
     return PatternFill(bgColor=hexrgb)
+
+
+# ---- VAC判定の配列式（一覧シートがAllシートから直接判定するために使う）----
+# 当日(rD0)・前日(rD1)・前々日(rD2)・翌日(rDP) の4本の配列を列ごとに突き合わせ、
+# 「その日がDOE（酸素化悪化の初日）の条件を満たすか」を 0/1 の配列で返す。
+def _idx(rng, row):
+    return f"INDEX({rng},{row},0)"
+
+
+def _mv_factor(rng, v, f, p):
+    """その日がMV日か（1/0）。V有無が優先、空欄のときだけFiO2/PEEPで補う"""
+    return (f'(({_idx(rng,v)}="V有")+({_idx(rng,v)}="")'
+            f'*(({_idx(rng,f)}<>"")+({_idx(rng,p)}<>""))>0)')
+
+
+def _fio2_norm(rng, f):
+    """FiO2を小数に正規化（40→0.4、0.4→0.4）"""
+    x = _idx(rng, f)
+    return f"IF({x}>1,{x}/100,{x})"
+
+
+def _peep_adj(rng, p):
+    """PEEP 0〜5 を 5 に補正する。配列演算なので MAX は使えない
+    （MAX は配列全体を1つの値に潰してしまうため、要素ごとに効く IF を使う）"""
+    x = _idx(rng, p)
+    return f"IF({x}>{PEEP_FLOOR},{x},{PEEP_FLOOR})"
+
+
+def vac_array(k):
+    """ブロックkについて、各日がVAC（酸素化悪化）の条件を満たすかの 1×365 配列式"""
+    v, f, p = all_v(k), all_f(k), all_p(k)
+    R0, R1, R2, RP = N_D0, N_D1, N_D2, N_DP
+
+    # 4日連続でMV日＝同一エピソード内、かつ当日はMV3日目以降
+    mv = "*".join(_mv_factor(r, v, f, p) for r in (R2, R1, R0, RP))
+
+    # FiO2経路：ベースライン(前々日)比で +20ポイント以上が2暦日持続
+    f2, f1, f0, fp = (_fio2_norm(r, f) for r in (R2, R1, R0, RP))
+    have_f = "*".join(f"ISNUMBER({_idx(r,f)})" for r in (R2, R1, R0, RP))
+    route_f = (f"({have_f}*({f1}<={f2})"
+               f"*(ROUND({f0}-{f2},6)>={FIO2_RISE})"
+               f"*(ROUND({fp}-{f2},6)>={FIO2_RISE}))")
+
+    # PEEP経路：ベースライン比で +3cmH2O以上が2暦日持続（0〜5は5として補正）
+    p2, p1, p0, pp = (_peep_adj(r, p) for r in (R2, R1, R0, RP))
+    have_p = "*".join(f"ISNUMBER({_idx(r,p)})" for r in (R2, R1, R0, RP))
+    route_p = (f"({have_p}*({p1}<={p2})"
+               f"*(ROUND({p0}-{p2},6)>={PEEP_RISE})"
+               f"*(ROUND({pp}-{p2},6)>={PEEP_RISE}))")
+
+    # 範囲の取り方で前々日は必ず日付列に収まる。最終日の翌日（ND列）は空欄なので
+    # MV日の条件で自動的に落ちるため、列の範囲チェックは不要。
+    return f"({mv}*(({route_f}+{route_p})>0))"
+
+
+def doe_col_formula(k, mvdays_cell, after_cell=None):
+    """VAC条件を満たす最初の列。after_cell を渡すと『その列+14日以降』で探す
+    （イベント期間14日：DOEから14日間は新たなVAEを判定しない）"""
+    arr = vac_array(k)
+    col = f"COLUMN({N_D0})"
+    if after_cell:
+        arr = f"{arr}*({col}>={after_cell}+{EVENT_PERIOD})"
+        guard = f"{after_cell}>{CN}"
+    else:
+        guard = f"{mvdays_cell}<{MV_MIN}"
+    return f"=IF({guard},{CN + 1000},SUMPRODUCT(MIN(IF({arr},{col},{CN + 1000}))))"
