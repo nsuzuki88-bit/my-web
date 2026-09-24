@@ -5,7 +5,7 @@ import openpyxl
 from openpyxl.workbook.defined_name import DefinedName
 from openpyxl.utils import get_column_letter as gl
 from common import *
-import sheet_clin, sheet_vae, sheet_list
+import sheet_clin, sheet_vae, sheet_list, sheet_all
 
 SRC = sys.argv[1] if len(sys.argv) > 1 else "ws.xlsx"
 DST = sys.argv[2] if len(sys.argv) > 2 else "out.xlsx"
@@ -34,6 +34,17 @@ GUIDE = [
     ("薄い灰青色", "自動計算（数式。上書きしないでください）"),
     ("緑色", "判定結果"),
     ("橙色", "VAEウィンドウ期間（DOE±2日）の行"),
+    ("", ""),
+    ("3-2. Allシートの赤色（FiO2・PEEPの行）", ""),
+    ("濃い赤（白文字）",
+     "DOE（イベント発生日）。個別判定シートが報告する日で、イベント期間14日による重複排除まで適用済みです。"),
+    ("薄い赤",
+     "JHAISの酸素化悪化基準（VAC）に合致した日のうち、上のDOEに当たらないもの。"
+     "＝直前のDOEから14日以内で新規報告の対象外か、まだ判定シートが割り当てられていない患者です。"
+     "薄い赤が出たら VAE対象一覧 でその患者の判定を確認してください。"),
+    ("補足",
+     "元のAllシートに入っていた条件付き書式（3,920ルール）は、#REF!エラー・FiO2を分数として比較・"
+     "参照位置のずれ（入力したセルと無関係のセルが赤くなる）があったため削除し、上の2ルールに置き換えました。"),
     ("", ""),
     ("4. MV日（人工呼吸器装着日）の判定ルール", ""),
     ("MV日とみなす日", "AllシートのV有無行が「V有」の日、または FiO2／PEEP のいずれかに入力がある日。"),
@@ -111,6 +122,8 @@ def main():
             del wb.defined_names[nm]
         wb.defined_names.add(DefinedName(nm, attr_text=ref))
 
+    removed = sheet_all.build(wb)
+    print(f"All: 壊れていた条件付き書式 {removed} ルールを削除し、DOE強調の2ルールに置換")
     build_guide(wb)
     sheet_clin.build(wb)
     lst = sheet_list.build(wb)
