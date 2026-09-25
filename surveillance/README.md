@@ -200,6 +200,8 @@ NHSN独自の MBI-LCBI・CLABSI除外条件（ECMO・VAD等）が必要な場合
 | `check2026.py` | 2026年度の実データ：1,200ブロックのVAC判定・スロット・判定シート・VAE集計（LibreOffice再計算値と保存値の両方） | 8,691 × 2 |
 | `test_clabsi.py list` | 2026年度の実データ：中心ライン患者229名の一覧と月別の分母・使用比 | 3,538 |
 | `test_cf2026.py`・`test_pipeline.py` | 2026年度の実データ：Allの赤色、臨床所見→判定シート→IVAC→PVAPの連鎖 | 2,569＋24 |
+| `demo_clabsi.py` | 2026年度の実データのコピーに**架空の血液培養陽性14例**を入れ、判定・患者一覧・CLABSI集計・既存の年間集計／上半期シートまで確認（架空の所見を実在の患者に付けたコピーになるため、このコピーは配布しない） | 424 |
+| `demo_clabsi.py demo` | 空テンプレートに架空の患者と15例を入れたデモ（Excelで確かめる用。LibreOffice再計算値と保存値の両方を照合） | 217 × 2 |
 
 **LibreOffice と Excel の差について**：Excel と LibreOffice では、配列計算・名前の解釈が異なる場合があります。
 検証中にも、`COUNTA` がエラー値を「1件」と数えること、`AND`／`OR` が途中で打ち切らずに全部の引数を計算すること
@@ -224,6 +226,8 @@ python3 test_clin_cf.py make test.xlsx ccf.xlsx         # → 再計算して te
 python3 test_clin.py make out.xlsx clin_t.xlsx plan.json  # → 再計算して test_clin.py verify
 python3 test_clabsi.py make out.xlsx clt.xlsx           # → 再計算して test_clabsi.py check
 python3 test_clabsi.py list <再計算済み> <年度ワークシート>  # 実データの患者一覧と分母
+python3 demo_clabsi.py real <年度ワークシート> <テスト用コピー>   # 架空の血培陽性を入れる → 再計算して demo_clabsi.py check
+python3 demo_clabsi.py demo out.xlsx デモ.xlsx          # 架空の患者のデモ → 再計算して demo_clabsi.py check-demo
 python3 ref_vae.py <年度ワークシート>.xlsx              # VAEの独立実装だけを単独で実行
 python3 make_refs2.py                                   # 引用文献リスト（CLABSI・集計）のPDF
 ```
