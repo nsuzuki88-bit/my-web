@@ -179,3 +179,9 @@ def analyse_global(path):
                         last_mv=dates[eps[-1][0] + eps[-1][1] - 1] if eps else None,
                         doe=[dates[i] for i in doe]))
     return dates, res
+
+
+def vac_patients(ref):
+    """VACと判定された患者を、一覧セクションA・臨床所見スロットの並び順にする
+    （DOE①の早い順。同じ日はブロック番号順）"""
+    return sorted((r for r in ref if r["doe"]), key=lambda r: (r["doe"][0], r["k"]))

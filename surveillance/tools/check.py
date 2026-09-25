@@ -8,7 +8,7 @@ import datetime as dt
 import sys, openpyxl
 import ref_vae as R
 import check2026
-from common import LIST_A_TOP, LIST_B_TOP, LIST_C_TOP, NBLK
+from common import LIST_A_TOP, LIST_B_TOP, NBLK
 
 D = lambda m, d: dt.datetime(2025, m, d)
 
@@ -30,6 +30,20 @@ EXPECT = {
 }
 
 
+def _vrows(src):
+    """各ブロックの (日付, V有無) の並び"""
+    from build import probe
+    wb = openpyxl.load_workbook(src)
+    al = wb["All"]
+    g = probe(al)
+    out = []
+    for k in range(1, g["NBLK"] + 1):
+        v = g["BLOCK0"] + g["BSTEP"] * (k - 1)
+        out.append([(al.cell(g["DATE_ROW"], c).value, al.cell(v, c).value)
+                    for c in range(g["C0"], g["CN"] + 1) if al.cell(v, c).value is not None])
+    return out
+
+
 def main(calc, src):
     ng = check2026.main(calc, src)
     ok_extra = ng_extra = 0
@@ -38,7 +52,10 @@ def main(calc, src):
         nonlocal ok_extra, ng_extra
         g = got.date() if isinstance(got, dt.datetime) else got
         w = want.date() if isinstance(want, dt.datetime) else want
-        if g == w or (g in (None, "") and w in (None, "")):
+        same = g == w or (g in (None, "") and w in (None, ""))
+        if not same and isinstance(g, float) and isinstance(w, (int, float)):
+            same = abs(g - w) < 1e-9
+        if same:
             ok_extra += 1
         else:
             ng_extra += 1
@@ -47,7 +64,7 @@ def main(calc, src):
     wb = openpyxl.load_workbook(calc, data_only=True)
     lst = wb["VAE対象一覧"]
     _, ref = R.analyse_global(src)
-    vac = [r for r in ref if r["doe"]]
+    vac = R.vac_patients(ref)
     rank = {r["k"]: i for i, r in enumerate(vac, 1)}
 
     print("\n=== 教科書例ごとの期待値 ===")
@@ -64,11 +81,25 @@ def main(calc, src):
               f"DOE={[d.strftime('%m/%d') for d in does] or '―'} "
               f"判定={got_judge or '―'}  (期待 {judge or '―'})")
 
-    print("\n=== 月別自動集計（4月）===")
+    print("\n=== VAE集計（4月）===")
     # VACはブロック1,3,4,5(2件),10,11,12 の計8件（8と9はIVAC/PVAPへ格上げ）
-    chk("  VAC件数", lst.cell(LIST_C_TOP, 2).value, 8)
-    chk("  IVAC件数", lst.cell(LIST_C_TOP + 1, 2).value, 1)
-    chk("  PVAP件数", lst.cell(LIST_C_TOP + 2, 2).value, 1)
+    vz = wb["VAE集計"]
+    chk("  VAC件数", vz.cell(8, 2).value, 8)
+    chk("  IVAC件数", vz.cell(9, 2).value, 1)
+    chk("  PVAP件数", vz.cell(10, 2).value, 1)
+    chk("  VAE合計", vz.cell(11, 2).value, 10)
+    # 分母：人工呼吸器使用患者数（V有）とICU入室患者数（C有＋C無）の4月の合計
+    v_days = sum(1 for b in _vrows(src) for d, x in b if x == "V有" and d.month == 4)
+    chk("  延べ人工呼吸器使用日数", vz.cell(6, 2).value, v_days)
+    chk("  VAC発生率", vz.cell(12, 2).value, 8 / v_days * 1000 if v_days else None)
+    chk("  VAE発生率 合計", vz.cell(15, 2).value, 10 / v_days * 1000 if v_days else None)
+    chk("  IVAC-plus発生率", vz.cell(16, 2).value, 2 / v_days * 1000 if v_days else None)
+    yz = wb["年間集計(VAE)"]
+    chk("  年間集計(VAE) 4月 VAC件数", yz["B7"].value, 8)
+    chk("  年間集計(VAE) 4月 IVAC件数", yz["B8"].value, 1)
+    chk("  年間集計(VAE) 4月 PVAP件数", yz["B9"].value, 1)
+    print(f"  延べ人工呼吸器使用日数 {v_days}日 → VAE合計10件 ＝ "
+          f"{vz.cell(15, 2).value} /1,000人工呼吸器日")
 
     print(f"\n==== 追加確認 ok={ok_extra}  NG={ng_extra} ====")
     return ng + ng_extra

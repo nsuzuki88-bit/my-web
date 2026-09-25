@@ -26,6 +26,10 @@ def chk(label, got, want):
 
 
 def mutate(src, dst):
+    """スロットの並び（DOE①の早い順、同じ日はブロック番号順）
+      変更前：1:b4 2:b5 3:b10 4:b11 5:b12 6:b3 7:b8 8:b9 9:b1
+      変更後：1:b4 2:b5 3:b11 4:b12 5:b20 6:b3 7:b8 8:b9 9:b1 10:b21
+    """
     wb = openpyxl.load_workbook(src)
     al, cl = wb["All"], wb["臨床所見"]
 
@@ -33,7 +37,7 @@ def mutate(src, dst):
     for d in (3, 4):
         al.cell(all_f(10), C0 + d - 1, 45)
 
-    # ② ブロック20に新規患者を追加 → 新しいVACとして末尾に並ぶ
+    # ② ブロック20に新規患者を追加（DOE 4/3）→ 同じ日のVACの中でブロック番号順に入る
     al.cell(all_id(20), 1, "T20")
     al.cell(all_name(20), 1, "検証20")
     for d, (f, p) in enumerate([(40, 5), (40, 5), (70, 5), (70, 5)]):
@@ -41,11 +45,19 @@ def mutate(src, dst):
         al.cell(all_f(20), C0 + d, f)
         al.cell(all_p(20), C0 + d, p)
 
-    # ③ ブロック9（VAC 6人目）のPVAP基準を削除 → PVAP から IVAC へ
-    cl.cell(clin_base(6) + 6, C0 + 5 - 1).value = None
+    # ②-2 ブロック21に5月の患者を追加（DOE 5/3）→ 末尾に付き、入力済みのスロットは動かない
+    al.cell(all_id(21), 1, "T21")
+    al.cell(all_name(21), 1, "検証21")
+    for d, (f, p) in enumerate([(40, 5), (40, 5), (70, 5), (70, 5)]):
+        al.cell(all_v(21), C0 + 30 + d, "V有")
+        al.cell(all_f(21), C0 + 30 + d, f)
+        al.cell(all_p(21), C0 + 30 + d, p)
 
-    # ④ スロット7（ブロック11・DOE 4/3）にDOEから離れた日付で入力 → 警告が出るはず
-    cl.cell(clin_base(7) + 0, C0 + 20 - 1, 38.2)
+    # ③ ブロック9（スロット8）のPVAP基準を削除 → PVAP から IVAC へ
+    cl.cell(clin_base(8) + 6, C0 + 5 - 1).value = None
+
+    # ④ スロット4（変更後はブロック12・DOE 4/3）にDOEから離れた日付で入力 → 警告が出るはず
+    cl.cell(clin_base(4) + 0, C0 + 20 - 1, 38.2)
 
     wb.save(dst)
     print("wrote", dst)
@@ -61,33 +73,39 @@ def verify(path):
     chk("  セクションB 判定", Bk(10, 9), None)
     chk("  セクションB VAC番号", Bk(10, 10), None)
 
-    print("\n② ブロック20に患者を追加 → 新しいVACとして末尾に並ぶ")
-    chk("  セクションB 判定", Bk(20, 9), "VAC")
-    chk("  セクションB DOE①", Bk(20, 7), D(4, 3))
+    print("\n② ブロック20・21に患者を追加")
+    chk("  ブロック20 判定", Bk(20, 9), "VAC")
+    chk("  ブロック20 DOE①", Bk(20, 7), D(4, 3))
+    chk("  ブロック21 判定", Bk(21, 9), "VAC")
+    chk("  ブロック21 DOE①", Bk(21, 7), D(5, 3))
 
-    print("\n VAC患者の並び（ブロック番号）")
+    print("\n VAC患者の並び（ブロック番号）＝DOE①の早い順、同じ日はブロック番号順")
     got = [A(n, 2) for n in range(1, NCLIN + 1) if A(n, 2) is not None]
-    chk("  並び順", got, [1, 3, 4, 5, 8, 9, 11, 12, 20])
+    chk("  並び順", got, [4, 5, 11, 12, 20, 3, 8, 9, 1, 21])
+    chk("  5月のVAC（ブロック21）は末尾", A(10, 2), 21)
+    chk("  臨床所見を入力済みのスロット7・8は動かない（ブロック8・9）", [A(7, 2), A(8, 2)], [8, 9])
 
-    print("\n③ ブロック9（6人目）のPVAP基準を削除 → IVACへ格下げ")
-    chk("  判定①", A(6, 9), "IVAC")
-    chk("  ブロック番号", A(6, 2), 9)
+    print("\n③ ブロック9（スロット8）のPVAP基準を削除 → IVACへ格下げ")
+    chk("  判定①", A(8, 9), "IVAC")
+    chk("  ブロック番号", A(8, 2), 9)
+    chk("  ブロック8（スロット7）はIVACのまま", A(7, 9), "IVAC")
 
-    print("\n 臨床所見に入力がある患者と判定シートの割当")
-    chk("  5人目(ブロック8) 臨床所見", A(5, 12), "入力あり")
-    chk("  5人目 判定シート番号", A(5, 13), 1)
-    chk("  6人目(ブロック9) 判定シート番号", A(6, 13), 2)
-    chk("  7人目(ブロック11) 判定シート番号", A(7, 13), 3)
-    chk("  8人目(ブロック12) 臨床所見", A(8, 12), "未入力")
-    chk("  VAE-01 のブロック", wb["VAE-01"]["C4"].value, 8)
-    chk("  VAE-02 のブロック", wb["VAE-02"]["C4"].value, 9)
-    chk("  VAE-03 のブロック", wb["VAE-03"]["C4"].value, 11)
+    print("\n 臨床所見に入力がある患者と判定シートの割当（スロット順）")
+    chk("  スロット4(ブロック12) 臨床所見", A(4, 12), "入力あり")
+    chk("  スロット4 判定シート番号", A(4, 13), 1)
+    chk("  スロット7(ブロック8) 判定シート番号", A(7, 13), 2)
+    chk("  スロット8(ブロック9) 判定シート番号", A(8, 13), 3)
+    chk("  スロット5(ブロック20) 臨床所見", A(5, 12), "未入力")
+    chk("  VAE-01 のブロック", wb["VAE-01"]["C4"].value, 12)
+    chk("  VAE-02 のブロック", wb["VAE-02"]["C4"].value, 8)
+    chk("  VAE-03 のブロック", wb["VAE-03"]["C4"].value, 9)
     chk("  VAE-04 は未割当", wb["VAE-04"]["C4"].value, None)
+    chk("  VAE-01（DOEから離れた日の体温だけ）はVACのまま", A(4, 9), "VAC")
 
-    print("\n④ DOEから離れた日に入力したスロット7 → 警告が出る")
-    chk("  スロット5（正常）", clin.cell(clin_base(5) + 5, 1).value, None)
-    chk("  スロット7（DOE 4/3 に対し 4/20 に入力）",
-        clin.cell(clin_base(7) + 5, 1).value, "⚠割当確認")
+    print("\n④ DOEから離れた日に入力したスロット4 → 警告が出る")
+    chk("  スロット7（正常）", clin.cell(clin_base(7) + 5, 1).value, None)
+    chk("  スロット4（DOE 4/3 に対し 4/20 に入力）",
+        clin.cell(clin_base(4) + 5, 1).value, "⚠割当確認")
 
     print(f"\n==== ok={ok}  NG={ng} ====")
     return ng

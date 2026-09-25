@@ -68,7 +68,7 @@ def make(src, dst):
 
     # ② VACの並び順とDOEを求め、各スロットに所見を入れる
     _, ref = R.analyse_global(dst)
-    vac = [r for r in ref if r["doe"]]
+    vac = R.vac_patients(ref)
     wb = openpyxl.load_workbook(dst)
     al, cl = wb["All"], wb["臨床所見"]
     plan = []

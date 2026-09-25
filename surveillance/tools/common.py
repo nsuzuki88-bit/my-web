@@ -16,7 +16,12 @@ BLOCK0 = 6                 # 1ブロック目の先頭行（＝V有無行）
 BSTEP = 5                  # 1ブロックの行数
 NBLK = 399                 # Allシートの患者ブロック数
 ALL_LAST_ROW = 2000
-NSHEET = 20                # 個別判定シートの枚数 VAE-01 .. VAE-nn
+# Allシート上部の日ごとの集計行（A列のラベルで探す。configure()で上書きされる）
+ROW_NIV = 1                # 人工呼吸器（NIV）  … COUNTIF "V有（NIV）"
+ROW_V = 2                  # 人工呼吸器使用患者数 … COUNTIF "V有"
+ROW_C = 3                  # CV挿入患者数       … COUNTIF "C有"
+ROW_ICU = 4                # ICU入室患者数      … COUNTIF "C有"＋"C無"
+NSHEET = 10                # 個別判定シートの枚数 VAE-01 .. VAE-nn
 NCLIN = 40                 # 臨床所見シートのスロット数（＝VAC判定された患者の上限）
 NBLK_MAX = 1200            # 一覧セクションBでスキャンするブロック数の上限
 MV_MIN = 4                 # VAC判定を行うMV日数の下限
@@ -40,6 +45,7 @@ def configure(**kw):
     g["LIST_D_HDR"] = g["LIST_C_TOP"] + 8
     g["LIST_D_TOP"] = g["LIST_D_HDR"] + 2
     g["LIST_D_BOT"] = g["LIST_D_TOP"] + g["NSHEET"] - 1
+    g["CL_B_BOT"] = g["CL_B_TOP"] + g["NBLK"] - 1
 
 
 # Allシートの各行（k＝ブロック番号）
@@ -84,6 +90,16 @@ LIST_D_HDR = LIST_C_TOP + 8           # セクションD 見出し（個別判�
 LIST_D_TOP = LIST_D_HDR + 2
 LIST_D_BOT = LIST_D_TOP + NSHEET - 1
 
+# ---- CLABSI判定シート -------------------------------------------------
+NEV = 30                              # 血流感染（BSI）イベントの入力行数
+CL_EV_TOP = 7                         # セクションA（BSIイベント）先頭行
+CL_EV_BOT = CL_EV_TOP + NEV - 1
+CL_B_HDR = CL_EV_BOT + 3              # セクションB（中心ライン留置患者の一覧）見出し
+CL_B_TOP = CL_B_HDR + 2
+CL_B_BOT = CL_B_TOP + NBLK - 1
+CL_SCAN_C0 = 22                       # 非表示の作業列（V列〜）：ブロックごとのスキャン
+CL_EV_H0 = 36                         # 非表示の作業列（AJ列〜）：BSIイベントごとの計算
+
 # ---- 名前付き範囲 ---------------------------------------------------
 N_ALL  = "VAE_ALL"   # All!$A$1:$NC$<last>   … 絶対列番号でINDEXする用
 N_ALLD = "VAE_ALLD"  # All!$C$1:$NC$<last>   … 日付列のみ（配列演算用）
@@ -117,6 +133,16 @@ ORANGE = "F8CBAD"   # VAEウィンドウ
 PINK   = "FFC7CE"   # 判定あり
 RED    = "C00000"
 BAND   = "DCE6F1"   # ブロック区切り
+
+# 臨床所見シートの色分け（項目のまとまりごと）。濃い色＝B列の項目名、淡い色＝入力欄
+CLIN_GROUPS = [          # (先頭行オフセット, 行数, 名前, 項目名の色, 入力欄の色)
+    (0, 2, "体温",   "F8CBAD", "FDF0E7"),
+    (2, 2, "WBC",    "BDD7EE", "EEF4FB"),
+    (4, 2, "抗菌薬", "C6E0B4", "F0F7EA"),
+    (6, 2, "PVAP",   "D9D2E9", "F4F1F9"),
+]
+WINDOW = "FFE699"   # VAEウィンドウ（DOE±2日）＝ここに入力する
+WINDOW_DOE = "FFC000"   # DOE当日
 
 thin = Side(style="thin", color="B4C6E7")
 BOX  = Border(left=thin, right=thin, top=thin, bottom=thin)

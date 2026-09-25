@@ -45,7 +45,7 @@ def build(wb):
         ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=14)
 
     # ============ セクションA：VAC患者の一覧 ==========================
-    ws.cell(5, 1, f"A. VACと判定された患者（臨床所見シートのスロット番号と対応・最大{NCLIN}名）")
+    ws.cell(5, 1, f"A. VACと判定された患者（DOEの早い順。臨床所見シートのスロット番号と対応・最大{NCLIN}名）")
     ws.cell(5, 1).font = F_SEC
     ws.merge_cells(start_row=5, start_column=1, end_row=5, end_column=14)
     for i, (t, _w) in enumerate(SEC_A):
@@ -128,7 +128,11 @@ def build(wb):
         ws.cell(r, 7, f'=IF($P{r}>{CN},"",INDEX({dates},1,$P{r}-{C0-1}))')
         ws.cell(r, 8, f'=IF($Q{r}>{CN},"",INDEX({dates},1,$Q{r}-{C0-1}))')
         ws.cell(r, 9, f'=IF($G{r}="","","VAC")')
-        ws.cell(r, 10, f'=IF($I{r}="","",COUNTIF($I${LIST_B_TOP}:$I{r},"VAC"))')
+        # VAC番号＝DOE①の早い順（同じ日はブロック番号順）。Allは日付順に入力していくので、
+        # 新しくVACになった患者は必ず末尾に付き、入力済みのスロットの並びが変わらない
+        G, A_ = f"$G${LIST_B_TOP}:$G${LIST_B_BOT}", f"$A${LIST_B_TOP}:$A${LIST_B_BOT}"
+        ws.cell(r, 10, f'=IF($I{r}="","",COUNTIFS({G},"<"&$G{r})'
+                       f'+COUNTIFS({G},$G{r},{A_},"<="&$A{r}))')
         for col, fmt in ((1, "0"), (2, "General"), (3, "General"), (4, "0"),
                          (5, "yyyy/m/d"), (6, "yyyy/m/d"), (7, "yyyy/m/d"),
                          (8, "yyyy/m/d"), (9, "General"), (10, "0")):
@@ -160,56 +164,12 @@ def build(wb):
         ws.merge_cells(start_row=LIST_B_BOT + 1, start_column=1,
                        end_row=LIST_B_BOT + 1, end_column=14)
 
-    # ============ セクションC：月別自動集計 ==========================
-    ws.cell(LIST_C_HDR, 1, "C. 月別 自動集計（参考値）　※セクションAのDOE・判定から自動計算。"
-                           "最終確定値は感染管理担当者の判定に基づいて決定してください")
+    # ============ セクションC：月別集計は「VAE集計」シートへ ===============
+    ws.cell(LIST_C_HDR, 1, "C. 月別集計（件数・使用比・発生率）は「VAE集計」シートにあります")
     ws.cell(LIST_C_HDR, 1).font = F_SEC
-    ws.merge_cells(start_row=LIST_C_HDR, start_column=1, end_row=LIST_C_HDR, end_column=14)
-    hr = LIST_C_HDR + 1
-    style_cell(ws.cell(hr, 1, "指標"), NAVY, F_HDR, A_C)
-    for i in range(12):
-        style_cell(ws.cell(hr, i + 2, f'=TEXT(EDATE(All!$C${DATE_ROW},{i}),"m月")'),
-                   NAVY, F_HDR, A_C)
-    style_cell(ws.cell(hr, 14, "計"), NAVY, F_HDR, A_C)
-
-    D1, J1 = f"$H${LIST_A_TOP}:$H${LIST_A_BOT}", f"$I${LIST_A_TOP}:$I${LIST_A_BOT}"
-    D2, J2 = f"$J${LIST_A_TOP}:$J${LIST_A_BOT}", f"$K${LIST_A_TOP}:$K${LIST_A_BOT}"
-
-    def count(kind, i):
-        lo = f'">="&EDATE(All!$C${DATE_ROW},{i})'
-        hi = f'"<"&EDATE(All!$C${DATE_ROW},{i+1})'
-        return (f'=COUNTIFS({D1},{lo},{D1},{hi},{J1},"{kind}")'
-                f'+COUNTIFS({D2},{lo},{D2},{hi},{J2},"{kind}")')
-
-    for j, label in enumerate(("VAC 件数", "IVAC 件数", "PVAP 件数")):
-        r = LIST_C_TOP + j
-        style_cell(ws.cell(r, 1, label), None, Font(size=9), A_L)
-        for i in range(12):
-            style_cell(ws.cell(r, i + 2, count(label.split()[0], i)), AUTO, F_BODY, A_C, numfmt="0")
-        style_cell(ws.cell(r, 14, f"=SUM(B{r}:M{r})"), AUTO, Font(bold=True, size=9), A_C, numfmt="0")
-
-    r = LIST_C_TOP + 3
-    style_cell(ws.cell(r, 1, "VAE 合計（VAC＋IVAC＋PVAP）"), None, Font(size=9, bold=True), A_L)
-    for i in range(12):
-        c = gl(i + 2)
-        style_cell(ws.cell(r, i + 2, f"=SUM({c}{LIST_C_TOP}:{c}{LIST_C_TOP+2})"),
-                   GREEN, F_RESULT, A_C, numfmt="0")
-    style_cell(ws.cell(r, 14, f"=SUM(B{r}:M{r})"), GREEN, F_RESULT, A_C, numfmt="0")
-
-    r = LIST_C_TOP + 4
-    style_cell(ws.cell(r, 1, "人工呼吸器装着延べ患者日数"), None, Font(size=9), A_L)
-    for i in range(12):
-        style_cell(ws.cell(r, i + 2, f"='年間集計(VAE)'!{gl(i+2)}4"), AUTO, F_BODY, A_C, numfmt="0")
-    style_cell(ws.cell(r, 14, f"=SUM(B{r}:M{r})"), AUTO, Font(bold=True, size=9), A_C, numfmt="0")
-
-    r = LIST_C_TOP + 5
-    style_cell(ws.cell(r, 1, "VAE率（/1,000人工呼吸器日）"), None, Font(size=9, bold=True), A_L)
-    for i in range(13):
-        col = i + 2 if i < 12 else 14
-        c = gl(col)
-        style_cell(ws.cell(r, col,
-                           f'=IF({c}{LIST_C_TOP+4}=0,"",{c}{LIST_C_TOP+3}/{c}{LIST_C_TOP+4}*1000)'),
-                   GREEN, F_RESULT, A_C, numfmt="0.00")
+    ws.merge_cells(start_row=LIST_C_HDR, start_column=1, end_row=LIST_C_HDR, end_column=10)
+    c = ws.cell(LIST_C_TOP, 1, '=HYPERLINK("#\'VAE集計\'!A1","▶ VAE集計シートを開く")')
+    c.font = Font(size=10, color="0563C1", underline="single")
 
     # ============ セクションD：個別判定シートの判定 ===================
     ws.cell(LIST_D_HDR, 1, f"D. 個別判定シート（VAE-01〜VAE-{NSHEET:02d}）の判定　"

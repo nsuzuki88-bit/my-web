@@ -8,12 +8,15 @@ openpyxl で保存したブックは、数式セルの値が空（<v />）にな
 では再計算されないため、一覧・臨床所見・判定シート・集計シートがすべて空欄に見える。
 
 LibreOffice で全再計算したブックから値を読み、元のブックの <c> 要素に <v> を差し込む。
-数式・書式・VBA・グラフなど、<c> 要素以外は一切変更しない。
+グラフも同じで、系列が参照するセルの値をグラフのキャッシュ（numCache／strCache）に書き込む
+（openpyxl で作ったグラフはキャッシュが空、既存のグラフは元のファイルの古い値のままのため）。
+数式・書式・VBA・グラフの設定など、値以外は一切変更しない。
 
   python3 fill_cache.py <build.pyの出力> <再計算済み(strip_charts後)> <出力>
 """
 import html, re, sys, zipfile, datetime as dt
 import openpyxl
+from openpyxl.utils.cell import range_boundaries
 from openpyxl.utils.datetime import to_excel
 
 CELL = re.compile(r'<c r="([A-Z]+\d+)"([^>]*)>(<f[^>]*/>|<f[^>]*>[^<]*</f>)(<v\s*/>|<v>[^<]*</v>)?</c>')
@@ -63,6 +66,69 @@ def v_xml(value, dtype):
     return ' t="str"', f"<v>{html.escape(str(value), quote=False)}</v>"
 
 
+# グラフの系列の参照（openpyxl は既定の名前空間で、Excel は c: を付けて書く。どちらにも対応）
+REF = re.compile(r'<(?P<p>(?:c:)?)(?P<kind>numRef|strRef)><(?P=p)f>(?P<f>[^<]*)</(?P=p)f>'
+                 r'(?P<cache><(?P=p)(?:numCache|strCache)>.*?</(?P=p)(?:numCache|strCache)>)?'
+                 r'</(?P=p)(?P=kind)>', re.S)
+
+
+def ref_values(wc, f):
+    """'シート'!$B$5:$M$5 の値（行優先の1次元）。読めない参照は None"""
+    f = html.unescape(f)
+    if "!" not in f or "#REF" in f:
+        return None
+    sheet, rng = f.rsplit("!", 1)
+    sheet = sheet.strip("'").replace("''", "'")
+    if sheet not in wc.sheetnames:
+        return None
+    c1, r1, c2, r2 = range_boundaries(rng.replace("$", ""))
+    rows = wc[sheet].iter_rows(min_row=r1, max_row=r2, min_col=c1, max_col=c2, values_only=True)
+    return [v for row in rows for v in row]
+
+
+def chart_cache(m, vals):
+    p, kind = m.group("p"), m.group("kind")
+    pts = []
+    if kind == "numRef":
+        fmt = re.search(r"<%sformatCode[^>]*>([^<]*)</%sformatCode>" % (p, p), m.group("cache") or "")
+        for i, v in enumerate(vals):
+            # 数値だけを入れる。#N/A・空欄・文字は点を置かない＝グラフに描かない
+            if isinstance(v, (int, float)) and not isinstance(v, bool):
+                pts.append(f"<{p}pt idx=\"{i}\"><{p}v>{v!r}</{p}v></{p}pt>")
+        head = (f"<{p}formatCode>{fmt.group(1) if fmt else 'General'}</{p}formatCode>"
+                f"<{p}ptCount val=\"{len(vals)}\"/>")
+        cache = f"<{p}numCache>{head}{''.join(pts)}</{p}numCache>"
+    else:
+        for i, v in enumerate(vals):
+            if v is None or (isinstance(v, str) and v.startswith("#")):
+                continue
+            t = v.strftime("%Y/%m/%d") if isinstance(v, dt.datetime) else str(v)
+            pts.append(f"<{p}pt idx=\"{i}\"><{p}v>{html.escape(t, quote=False)}</{p}v></{p}pt>")
+        cache = f"<{p}strCache><{p}ptCount val=\"{len(vals)}\"/>{''.join(pts)}</{p}strCache>"
+    return f"<{p}{kind}><{p}f>{m.group('f')}</{p}f>{cache}</{p}{kind}>"
+
+
+def fill_charts(zs, wc):
+    out, n = {}, 0
+    for name in zs.namelist():
+        if not re.match(r"xl/charts/chart\d+\.xml$", name):
+            continue
+        x = zs.read(name).decode("utf-8")
+
+        def repl(m):
+            nonlocal n
+            vals = ref_values(wc, m.group("f"))
+            if vals is None:
+                return m.group(0)
+            n += 1
+            return chart_cache(m, vals)
+
+        x2 = REF.sub(repl, x)
+        if x2 != x:
+            out[name] = x2.encode("utf-8")
+    return out, n
+
+
 def main(src, calc, dst):
     zs = zipfile.ZipFile(src)
     parts = sheet_parts(zs)
@@ -87,6 +153,10 @@ def main(src, calc, dst):
         new_xml[part] = x2.encode("utf-8")
         total += len(vals)
         print(f"  {name}: 数式 {len(coords)}セル / 値を書き込み {len(vals)}セル")
+
+    charts, nref = fill_charts(zs, wc)
+    new_xml.update(charts)
+    print(f"  グラフ {len(charts)}個：系列の参照 {nref}か所のキャッシュを更新")
 
     with zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED) as zd:
         for info in zs.infolist():

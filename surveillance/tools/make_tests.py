@@ -73,8 +73,7 @@ def main(src="out.xlsx", dst="test.xlsx"):
 
     # VACの並び順を求め、該当スロットに臨床所見を入力する
     _, ref = R.analyse_global(dst)
-    vac_rank = {r["k"]: i for i, r in enumerate(
-        [x for x in ref if x["doe"]], 1)}
+    vac_rank = {r["k"]: i for i, r in enumerate(R.vac_patients(ref), 1)}
     wb = openpyxl.load_workbook(dst)
     cl = wb["臨床所見"]
     for k, day, off, val in CLIN:

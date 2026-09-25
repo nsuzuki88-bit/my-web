@@ -29,7 +29,7 @@ def main(calc, src):
     global ok, ng
     dates, ref = R.analyse_global(src)
     refmap = {r["k"]: r for r in ref}
-    vac = [r for r in ref if r["doe"]]
+    vac = R.vac_patients(ref)          # スロットの並び＝DOE①の早い順
 
     wb = openpyxl.load_workbook(calc, data_only=True)
     lst = wb["VAE対象一覧"]
@@ -99,6 +99,27 @@ def main(calc, src):
         if want:
             chk(f"VAE-{i:02d} 患者ID", ws["C5"].value, want["pid"])
             chk(f"VAE-{i:02d} DOE①", ws["K8"].value, want["doe"][0])
+
+    # ---- VAE集計 --------------------------------------------------
+    print("\n=== VAE集計：月別の分母と件数 ===")
+    import ref_clabsi as RC
+    _d, blks, _g = RC.blocks(src)
+    vrows = R.read_blocks(src)[1]
+    start = dates[0]
+    months = [((start.month - 1 + i) // 12 + start.year, (start.month - 1 + i) % 12 + 1)
+              for i in range(12)]
+    vz = wb["VAE集計"]
+    for i, (y, m) in enumerate(months):
+        inm = lambda d: (d.year, d.month) == (y, m)
+        pdays = sum(1 for b in blks for d, x in zip(_d, b["c"]) if x in ("C有", "C無") and inm(d))
+        vdays = sum(1 for b in vrows for d, x in zip(dates, b["v"]) if x == "V有" and inm(d))
+        events = sum(1 for r in vac[:NCLIN] for d in r["doe"][:2] if inm(d))
+        chk(f"VAE集計 {m}月 延べ入室患者日数", vz.cell(5, i + 2).value, pdays)
+        chk(f"VAE集計 {m}月 延べ人工呼吸器使用日数", vz.cell(6, i + 2).value, vdays)
+        chk(f"VAE集計 {m}月 VAE合計", vz.cell(11, i + 2).value, events)
+        if pdays:
+            print(f"  {m:2d}月: 延べ入室患者日数 {pdays:4d}  延べ人工呼吸器使用日数 {vdays:4d}  "
+                  f"使用比 {vz.cell(7, i + 2).value:.3f}  VAE {events}件")
 
     print(f"\n==== ok={ok}  NG={ng} ====")
     return ng
