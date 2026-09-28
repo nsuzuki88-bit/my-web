@@ -148,14 +148,24 @@ p{margin:0}
 .tab-meter{display:inline-block;width:44px;height:4px;border-radius:2px;background:var(--surface-2);overflow:hidden}
 .tab-meter i{display:block;height:100%;background:var(--series-1);width:0}
 
-.form{overflow:hidden}
+.form{overflow:hidden;scroll-margin-top:70px}
+.form-bar{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:space-between;padding:9px clamp(14px,2.4vw,24px);border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-2)}
+.form-bar label{display:inline-flex;gap:7px;align-items:center;cursor:pointer;font-weight:700;color:var(--ink)}
+.form-bar input{accent-color:var(--accent);width:17px;height:17px;margin:0}
+.tab-left{font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.tab-left.done{color:var(--accent);font-weight:700}
+.panel-nav{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.panel-nav .spacer{flex:1 1 auto}
+.ftoast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:13.5px;z-index:40;box-shadow:var(--shadow);max-width:calc(100% - 32px);text-align:center}
+.results.flash{box-shadow:0 0 0 2px var(--accent)}
 .tabpanel{padding:18px clamp(14px,2.4vw,24px) 24px}
 .panel-head{display:grid;gap:6px;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:6px}
 .panel-head h2{font-size:19px}
 .panel-head h2 .en{font-size:13px;color:var(--ink-3);font-weight:400;margin-left:8px;letter-spacing:.02em}
 .panel-head p{color:var(--ink-2);font-size:14px}
 .q-group{display:flex;gap:10px;align-items:baseline;padding:16px 0 2px;color:var(--ink-2);font-size:14px;font-weight:700}
-.q{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.q{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:8px;scroll-margin-top:90px;border-radius:6px;outline:2px solid transparent;outline-offset:6px}
+.q.q-next{outline-color:var(--accent)}
 .q:last-child{border-bottom:0}
 .q-sub{padding-left:clamp(0px,2vw,18px)}
 .q-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:baseline}
@@ -368,11 +378,12 @@ p{margin:0}
   .act-rank{font-size:22px}
 }
 @media (prefers-reduced-motion:no-preference){
-  .act{transition:box-shadow .3s}
+  .act,.results{transition:box-shadow .3s}
+  .q{transition:outline-color .4s}
   .tab-meter i,.cbar i{transition:width .25s}
 }
 @media print{
-  .appbar,.toolbar,.tabs-wrap,.form,.history,.prio-controls,.banner .btn,.no-print{display:none !important}
+  .appbar,.toolbar,.tabs-wrap,.form,.history,.prio-controls,.banner .btn,.no-print,.ftoast{display:none !important}
   body{background:#fff;color:#000}
   .workspace{grid-template-columns:1fr}
   .results{position:static;max-height:none;overflow:visible}
@@ -433,6 +444,10 @@ p{margin:0}
 
   <div class="workspace">
     <section class="panel form" aria-label="評価票">
+      <div class="form-bar">
+        <label for="autoAdv"><input type="checkbox" id="autoAdv" checked>回答したら自動で次へ進む</label>
+        <span id="formProgress"></span>
+      </div>
       <div class="tabs-wrap"><div class="tabs" role="tablist" id="tabs" aria-label="構成要素"></div></div>
       <div id="panels"></div>
     </section>
@@ -528,6 +543,8 @@ p{margin:0}
     <p>回答はこのブラウザ内にのみ保存され、外部には送信されません。確実に残すには「JSONで保存」または「結果をテキストでコピー」を使ってください。</p>
   </footer>
 </main>
+
+<div class="ftoast" id="floatToast" role="status" aria-live="polite" hidden></div>
 
 <script>
 /* DATA:BEGIN */
@@ -1145,13 +1162,13 @@ let state = (() => {
 })();
 let history = (() => { const h = lsGet(K_HIST); return Array.isArray(h) ? h.filter(x => x && x.id && Array.isArray(x.comp)) : []; })();
 const savedUi = lsGet(K_UI) || {};
-let ui = {tab: savedUi.tab || '1', sort: savedUi.sort || 'priority', comp: 'all', inclUn: true,
+let ui = {tab: savedUi.tab || '1', sort: savedUi.sort || 'priority', comp: 'all', inclUn: true, auto: savedUi.auto !== false,
   compare: state.sample ? 'sample-prev' : (history[0] ? history[0].id : '')};
 
 let saveTimer = null;
 function persist(){
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { lsSet(K_DRAFT, state); lsSet(K_UI, {tab: ui.tab, sort: ui.sort}); }, 250);
+  saveTimer = setTimeout(() => { lsSet(K_DRAFT, state); lsSet(K_UI, {tab: ui.tab, sort: ui.sort, auto: ui.auto}); }, 250);
 }
 
 /* ---------- toast ---------- */
@@ -1186,7 +1203,7 @@ function qHTML(q){
 function renderForm(){
   const tabs = COMPONENTS.map(c => `<button type="button" role="tab" class="tab" id="tab-${c.no}" data-tab="${c.no}" aria-controls="panel-${c.no}">
       <span class="tab-no">${c.no}</span><span class="tab-name">${c.name}</span>
-      <span class="tab-score"><span class="num" data-tabscore="${c.no}">0</span><span class="tab-meter"><i data-tabmeter="${c.no}"></i></span></span></button>`).join('')
+      <span class="tab-score"><span class="num" data-tabscore="${c.no}">0</span><span class="tab-meter"><i data-tabmeter="${c.no}"></i></span><span class="tab-left" data-tableft="${c.no}"></span></span></button>`).join('')
     + `<button type="button" role="tab" class="tab" id="tab-L" data-tab="L" aria-controls="panel-L">
       <span class="tab-no">L</span><span class="tab-name">リーダーシップ基準</span>
       <span class="tab-score"><span class="num" data-tabscore="L">0</span>/20</span></button>`;
@@ -1203,8 +1220,13 @@ function renderForm(){
       }
       return pre + qHTML(q);
     }).join('');
+    const prev = c.no > 1 ? `<button type="button" class="btn" data-goto="${c.no - 1}">← ${c.no - 1} ${COMPONENTS[c.no - 2].name}</button>` : '';
+    const next = c.no < 5
+      ? `<button type="button" class="btn btn-primary" data-goto="${c.no + 1}">${c.no + 1} ${COMPONENTS[c.no].name} →</button>`
+      : `<button type="button" class="btn" data-goto="L">L リーダーシップ基準 →</button><button type="button" class="btn btn-primary" data-goto="results">結果と優先順位へ ↓</button>`;
     html += `<section class="tabpanel" role="tabpanel" id="panel-${c.no}" aria-labelledby="tab-${c.no}" hidden>
-      <header class="panel-head"><h2>${c.no}. ${c.name}<span class="en">${c.en}</span></h2><p>${c.desc}</p></header>${qs}</section>`;
+      <header class="panel-head"><h2>${c.no}. ${c.name}<span class="en">${c.en}</span></h2><p>${c.desc}</p></header>${qs}
+      <nav class="panel-nav" aria-label="構成要素の移動">${prev}<span class="spacer"></span>${next}</nav></section>`;
   }
   const leadGroups = COMPONENTS.map(c => `<div class="lead-group"><h3>${c.no}. ${c.name}</h3>${
     LEADERSHIP.filter(L => L.c === c.no).map(L => `<label class="lead-item" for="lead_${L.id}"><input type="checkbox" id="lead_${L.id}" data-lead="${L.id}"><span>${L.t}</span></label>`).join('')}</div>`).join('');
@@ -1212,7 +1234,8 @@ function renderForm(){
     <header class="panel-head"><h2>リーダーシップ基準<span class="en">Leadership criteria</span></h2>
     <p>総合スコアが上級（376点以上）の施設が評価します。各構成要素で1項目以上「はい」かつ、20項目中12項目以上「はい」の場合に「手指衛生リーダーシップ」レベルと判定します。</p></header>
     <p class="lead-note" id="leadNote"></p>${leadGroups}
-    <p class="lead-note">日本語訳版の判定文は「各カテゴリー1項目以上、または合計12項目以上」と読める表記ですが、WHO英語版原典と国際調査の運用に合わせ、両方の条件を満たす場合に判定しています。</p></section>`;
+    <p class="lead-note">日本語訳版の判定文は「各カテゴリー1項目以上、または合計12項目以上」と読める表記ですが、WHO英語版原典と国際調査の運用に合わせ、両方の条件を満たす場合に判定しています。</p>
+    <nav class="panel-nav" aria-label="構成要素の移動"><button type="button" class="btn" data-goto="5">← 5 ${COMPONENTS[4].name}</button><span class="spacer"></span><button type="button" class="btn btn-primary" data-goto="results">結果と優先順位へ ↓</button></nav></section>`;
   $('#panels').innerHTML = html;
 }
 function syncInputs(){
@@ -1230,6 +1253,63 @@ function selectTab(t){
   document.querySelectorAll('#tabs .tab').forEach(b => { const on = b.dataset.tab === ui.tab; b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1; });
   document.querySelectorAll('#panels .tabpanel').forEach(p => { p.hidden = p.id !== `panel-${ui.tab}`; });
   persist();
+}
+
+/* ---------- 自動で次へ進む ---------- */
+const scrollBehavior = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
+const isOpen = q => enabled(q, state.ans) && state.ans[q.id] == null;
+function nextTarget(id){
+  const c = QMAP[id].c, list = QUESTIONS.filter(x => x.c === c), i = list.findIndex(x => x.id === id);
+  const inTab = list.slice(i + 1).find(isOpen) || list.slice(0, i).find(isOpen);
+  if (inTab) return {type:'q', q: inTab};
+  for (const n of [1,2,3,4,5].filter(n => n > c).concat([1,2,3,4,5].filter(n => n < c))){
+    const f = QUESTIONS.find(x => x.c === n && isOpen(x));
+    if (f) return {type:'tab', c: n, q: f};
+  }
+  return {type:'done'};
+}
+function goToQuestion(q, fromTop){
+  const row = document.getElementById('qrow-' + q.id);
+  if (!row) return;
+  const firstInTab = QUESTIONS.find(x => x.c === q.c) === q;
+  if (fromTop && firstInTab) $('.form').scrollIntoView({behavior: scrollBehavior(), block:'start'});
+  else row.scrollIntoView({behavior: scrollBehavior(), block:'center'});
+  row.classList.add('q-next');
+  setTimeout(() => row.classList.remove('q-next'), 1500);
+  const inp = row.querySelector('input:not(:disabled)');
+  if (inp) inp.focus({preventScroll: true});
+}
+function goToResults(){
+  const narrow = matchMedia('(max-width:1020px)').matches;
+  (narrow ? $('.results') : $('#priority')).scrollIntoView({behavior: scrollBehavior(), block:'start'});
+}
+let advTimer = null;
+function scheduleAdvance(id){
+  clearTimeout(advTimer);
+  const t = nextTarget(id);
+  advTimer = setTimeout(() => {
+    if (t.type === 'q') return goToQuestion(t.q, false);
+    if (t.type === 'tab'){
+      selectTab(String(t.c));
+      floatToast(`${t.c}. ${COMPONENTS[t.c - 1].name} に進みました`);
+      return goToQuestion(t.q, true);
+    }
+    const res = $('.results');
+    res.classList.add('flash'); setTimeout(() => res.classList.remove('flash'), 2000);
+    if (lastResult && lastResult.level.idx === 3){
+      selectTab('L');
+      $('.form').scrollIntoView({behavior: scrollBehavior(), block:'start'});
+      floatToast('1〜5の回答が終わりました。上級に到達したので、リーダーシップ基準も回答できます。');
+    } else {
+      floatToast('1〜5の回答が終わりました。結果と優先順位を確認してください。');
+      goToResults();
+    }
+  }, t.type === 'q' ? 280 : 650);
+}
+let floatTimer = null;
+function floatToast(msg){
+  const el = $('#floatToast'); el.textContent = msg; el.hidden = false;
+  clearTimeout(floatTimer); floatTimer = setTimeout(() => { el.hidden = true; }, 3200);
 }
 function updateForm(r){
   for (const q of QUESTIONS){
@@ -1249,7 +1329,13 @@ function updateForm(r){
   for (let i = 0; i < 5; i++){
     document.querySelector(`[data-tabscore="${i+1}"]`).textContent = fmt(r.comp[i]);
     document.querySelector(`[data-tabmeter="${i+1}"]`).style.width = r.comp[i] + '%';
+    const left = QUESTIONS.filter(q => q.c === i + 1 && isOpen(q)).length;
+    const tl = document.querySelector(`[data-tableft="${i+1}"]`);
+    tl.textContent = left ? `残${left}` : '✓';
+    tl.classList.toggle('done', !left);
+    tl.setAttribute('aria-label', left ? `未回答${left}問` : 'すべて回答済み');
   }
+  $('#formProgress').textContent = `回答済み ${r.answered} / ${r.applicable} 設問`;
   document.querySelector('[data-tabscore="L"]').textContent = r.lead.count;
   $('#leadNote').textContent = r.lead.eligible
     ? `現在の総合スコアは上級です。「はい」${r.lead.count}項目（構成要素別 ${r.lead.per.join('・')}）。${r.lead.achieved ? 'リーダーシップレベルの条件を満たしています。' : '条件：合計12項目以上、かつ各構成要素で1項目以上。'}`
@@ -1536,19 +1622,41 @@ function bind(){
     const n = ids[(i + (e.key === 'ArrowRight' ? 1 : ids.length - 1)) % ids.length];
     selectTab(n); document.getElementById('tab-' + n).focus(); e.preventDefault();
   });
+  // 矢印キーで選択肢を動かしている間は自動で進まない（クリック・タップで初めて回答したときだけ進む）
+  let keyNav = false;
+  $('#panels').addEventListener('keydown', e => { if (e.target.matches('input[type=radio]')) keyNav = true; });
+  $('#panels').addEventListener('pointerdown', () => { keyNav = false; });
   $('#panels').addEventListener('change', e => {
     const t = e.target;
-    if (t.matches('input[type=radio][data-q]')) state.ans[t.dataset.q] = +t.value;
-    else if (t.matches('input[data-lead]')){ if (t.checked) state.lead[t.dataset.lead] = true; else delete state.lead[t.dataset.lead]; }
-    else return;
-    refresh();
+    if (t.matches('input[type=radio][data-q]')){
+      const id = t.dataset.q, first = state.ans[id] == null;
+      state.ans[id] = +t.value;
+      refresh();
+      if (first && ui.auto && !keyNav) scheduleAdvance(id);
+      return;
+    }
+    if (t.matches('input[data-lead]')){ if (t.checked) state.lead[t.dataset.lead] = true; else delete state.lead[t.dataset.lead]; refresh(); }
   });
+  $('#panels').addEventListener('click', e => {
+    const b = e.target.closest('[data-goto]'); if (!b) return;
+    clearTimeout(advTimer);
+    if (b.dataset.goto === 'results') return goToResults();
+    selectTab(b.dataset.goto);
+    const q = QUESTIONS.find(x => String(x.c) === b.dataset.goto && isOpen(x));
+    if (q) goToQuestion(q, true);
+    else $('.form').scrollIntoView({behavior: scrollBehavior(), block:'start'});
+  });
+  $('#autoAdv').addEventListener('change', e => { ui.auto = e.target.checked; if (!ui.auto) clearTimeout(advTimer); persist(); });
   const metaBind = (id, key) => $(id).addEventListener('input', e => { state.meta[key] = e.target.value; persist(); });
   metaBind('#fFacility', 'facility'); metaBind('#fDate', 'date'); metaBind('#fAssessor', 'assessor');
 
   $('#btnNew').addEventListener('click', e => {
     const dirty = !state.sample && Object.keys(state.ans).length > 0;
-    const go = () => { loadState(blankState()); selectTab('1'); toast('白紙の評価票を用意しました。構成要素1から回答してください。'); };
+    const go = () => {
+      loadState(blankState()); selectTab('1');
+      toast('白紙の評価票を用意しました。構成要素1から回答してください。');
+      goToQuestion(QUESTIONS[0], true);
+    };
     if (dirty) arm(e.currentTarget, 'もう一度押すと回答を消去', go); else go();
   });
   $('#btnSample').addEventListener('click', e => {
@@ -1632,6 +1740,7 @@ renderForm();
 renderRefs();
 if (framed){ $('#btnPrint').hidden = true; $('#btnExport').hidden = true; }
 $('#sortSel').value = ui.sort;
+$('#autoAdv').checked = ui.auto;
 renderHistory();
 renderCompareSelect();
 syncInputs();
