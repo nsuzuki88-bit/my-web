@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>AI活用ラダー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+  :root {
+    --bg: #F1F4F3;
+    --surface: #FFFFFF;
+    --surface-2: #E6ECEA;
+    --ink: #15201E;
+    --muted: #56655F;
+    --line: #D1DAD7;
+    --accent: #0D6A62;
+    --accent-ink: #FFFFFF;
+    --accent-soft: #D5EBE7;
+    --caution: #A24E17;
+    --caution-soft: #F6E4D5;
+    --focus: #1F5FD1;
+    --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    --font-display: "Shippori Mincho B1", "Hiragino Mincho ProN", "Yu Mincho", "YuMincho", serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0D1312;
+      --surface: #151D1C;
+      --surface-2: #1D2826;
+      --ink: #E3ECE9;
+      --muted: #9CACA7;
+      --line: #2C3937;
+      --accent: #5CC4B6;
+      --accent-ink: #0A1413;
+      --accent-soft: #17332F;
+      --caution: #E79C66;
+      --caution-soft: #3A2618;
+      --focus: #86ABFF;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0D1312;
+    --surface: #151D1C;
+    --surface-2: #1D2826;
+    --ink: #E3ECE9;
+    --muted: #9CACA7;
+    --line: #2C3937;
+    --accent: #5CC4B6;
+    --accent-ink: #0A1413;
+    --accent-soft: #17332F;
+    --caution: #E79C66;
+    --caution-soft: #3A2618;
+    --focus: #86ABFF;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 72px; }
+  h1, h2, h3 { text-wrap: balance; margin: 0; }
+  p { margin: 0; }
+  button { font: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  /* ---------- hero ---------- */
+  .hero { display: grid; gap: 12px; margin-bottom: 28px; }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(34px, 7vw, 48px);
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+  }
+  .hero .lead { max-width: 40em; color: var(--ink); }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 4px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 42px; padding: 8px 18px;
+    border-radius: 4px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink);
+    font-weight: 500; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700; }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-quiet { background: transparent; }
+  .btn-warn { border-color: var(--caution); color: var(--caution); }
+
+  /* ---------- ladder ---------- */
+  .ladder {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px; align-items: end;
+  }
+  .rung {
+    min-height: calc(150px + var(--i) * 22px);
+    padding: 12px 12px 14px;
+    background: var(--surface);
+    border-top: 3px solid var(--accent);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .rung .num { font-family: var(--font-display); font-weight: 800; font-size: 26px; line-height: 1.1; color: var(--accent); }
+  .rung .nm { font-weight: 700; font-size: 15px; }
+  .rung .ds { font-size: 12.5px; line-height: 1.6; color: var(--muted); }
+  .rung .tag { display: none; }
+  .ladder.has-state .rung { border-top-color: var(--line); }
+  .ladder.has-state .rung.done { border-top-color: var(--accent); background: var(--accent-soft); }
+  .ladder.has-state .rung.here { background: var(--accent); border-top-color: var(--accent); color: var(--accent-ink); }
+  .ladder.has-state .rung.here .num,
+  .ladder.has-state .rung.here .ds { color: var(--accent-ink); }
+  .ladder.has-state .rung.here .tag {
+    display: inline-block; align-self: flex-start; margin-top: 6px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    padding: 1px 8px; border: 1px solid currentColor; border-radius: 2px;
+  }
+  .ladder.has-state .rung.ahead .num { color: var(--muted); }
+  .ladder-note { margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+
+  /* ---------- quiz ---------- */
+  .quiz { margin-top: 40px; display: grid; gap: 28px; }
+  .axes-list { display: grid; gap: 44px; }
+  .axis { display: grid; gap: 22px; }
+  .axis-head { display: grid; gap: 2px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .axis-head h2 { font-size: 22px; font-weight: 700; }
+  .axis-head .sub { color: var(--muted); font-size: 14px; }
+  .q { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 10px; }
+  .q legend { padding: 0; margin-bottom: 10px; font-weight: 700; font-size: 16px; line-height: 1.6; }
+  .q legend .qno { font-family: var(--font-mono); font-weight: 600; font-size: 13px; color: var(--accent); margin-right: 8px; }
+  .q .missing-tag { display: none; margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--caution); }
+  .q.missing .missing-tag { display: inline; }
+  .q.missing legend { color: var(--caution); }
+  .opts { display: grid; gap: 8px; }
+  .opt {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line); border-radius: 4px;
+    cursor: pointer; line-height: 1.6;
+  }
+  .opt:hover { border-color: var(--accent); }
+  .opt input { accent-color: var(--accent); margin: 5px 0 0; flex: none; width: 16px; height: 16px; }
+  .opt:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .opt:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  .bar {
+    position: sticky; bottom: 0; z-index: 2;
+    display: flex; align-items: center; gap: 14px;
+    padding-top: 12px; padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+  }
+  .bar-track { flex: 1; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+  .bar-count { font-family: var(--font-mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  /* ---------- result ---------- */
+  .result { display: grid; gap: 0; }
+  .sample-flag {
+    padding: 10px 14px; margin-bottom: 20px;
+    border: 1px dashed var(--muted); border-radius: 4px;
+    font-size: 13.5px; color: var(--muted);
+  }
+  .res-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 20px; align-items: center; margin-bottom: 20px; }
+  .level-card { display: grid; gap: 8px; }
+  .level-mark { display: flex; align-items: baseline; gap: 14px; }
+  .level-mark .numeral {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(72px, 16vw, 104px); line-height: 1; color: var(--accent);
+  }
+  .level-mark .lv-name { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1.2; }
+  .level-card .desc { max-width: 28em; }
+  .total { font-size: 14px; color: var(--muted); }
+  .total b { font-family: var(--font-mono); font-weight: 600; font-size: 20px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .gate-note { font-size: 13px; color: var(--muted); border-left: 2px solid var(--line); padding-left: 10px; }
+
+  .radar { margin: 0; }
+  .radar svg { width: 100%; height: auto; display: block; }
+  .radar figcaption { font-size: 12px; color: var(--muted); text-align: center; }
+  .r-ring { fill: none; stroke: var(--line); stroke-width: 1; }
+  .r-ring-outer { stroke: var(--muted); stroke-opacity: .5; }
+  .r-spoke { stroke: var(--line); stroke-width: 1; }
+  .r-area { fill: var(--accent); fill-opacity: .18; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+  .r-dot { fill: var(--accent); }
+  .r-label { fill: var(--ink); font-family: var(--font-body); font-size: 14px; font-weight: 700; }
+  .r-val { fill: var(--muted); font-family: var(--font-mono); font-size: 13px; font-weight: 400; }
+
+  .caution {
+    margin-top: 24px; padding: 14px 16px;
+    background: var(--caution-soft); border-left: 3px solid var(--caution);
+    display: grid; gap: 4px; font-size: 14px;
+  }
+  .caution strong { color: var(--caution); }
+
+  .res-sec { margin-top: 44px; display: grid; gap: 14px; }
+  .res-sec > h2 { font-size: 20px; font-weight: 700; }
+  .res-sec > .intro { color: var(--muted); font-size: 14px; }
+
+  .axes { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+  .ax-head { display: flex; align-items: center; gap: 10px; }
+  .ax-name { font-weight: 700; }
+  .ax-pct { margin-left: auto; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 14px; }
+  .chip {
+    font-size: 11.5px; line-height: 1; padding: 4px 8px; border-radius: 2px;
+    border: 1px solid var(--line); color: var(--muted); letter-spacing: 0.04em;
+  }
+  .chip.t0 { background: var(--caution-soft); border-color: transparent; color: var(--caution); }
+  .chip.t1 { background: var(--surface-2); border-color: transparent; color: var(--ink); }
+  .chip.t2 { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+  .track { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; margin-top: 6px; }
+  .track .fill { height: 100%; background: var(--accent); }
+  .track .fill.t0 { background: var(--caution); }
+  .ax-sub { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+  .steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .step {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 4px;
+    padding: 18px 20px; display: grid; gap: 12px;
+  }
+  .step-head { display: flex; gap: 14px; align-items: flex-start; }
+  .step-no {
+    flex: none; width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--accent); color: var(--accent-ink);
+    font-family: var(--font-mono); font-weight: 600; font-size: 15px;
+  }
+  .step-axis { font-size: 12.5px; color: var(--muted); }
+  .step h3 { font-size: 17px; font-weight: 700; line-height: 1.5; }
+  .step-list { margin: 0; padding-left: 1.4em; display: grid; gap: 6px; }
+  .step-list li { padding-left: 2px; }
+  .step-list li::marker { font-family: var(--font-mono); color: var(--accent); }
+  .step-done { font-size: 14px; padding-top: 10px; border-top: 1px dashed var(--line); }
+  .step-done span {
+    font-family: var(--font-mono); font-size: 11.5px; letter-spacing: 0.06em;
+    color: var(--accent); margin-right: 10px;
+  }
+
+  .checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .checklist li { display: flex; gap: 10px; align-items: flex-start; }
+  .checklist li::before {
+    content: ""; flex: none; width: 14px; height: 14px; margin-top: 6px;
+    border: 1.5px solid var(--accent); border-radius: 2px;
+  }
+
+  .actions { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .copy-fallback {
+    width: 100%; min-height: 180px; margin-top: 12px; padding: 10px;
+    font-family: var(--font-mono); font-size: 12.5px;
+    background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 4px;
+  }
+
+  .about { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); display: grid; gap: 8px; font-size: 12.5px; color: var(--muted); }
+  .about h2 { font-size: 13px; font-weight: 700; color: var(--ink); }
+  .about ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+
+  @media (max-width: 640px) {
+    .wrap { padding-inline: 16px; padding-block: 28px 56px; }
+    .ladder { grid-template-columns: 1fr; gap: 6px; }
+    .rung {
+      order: var(--o); min-height: 0;
+      margin-left: calc(var(--i) * 10px);
+      display: grid; grid-template-columns: 36px 1fr; column-gap: 10px; row-gap: 0;
+      padding: 10px 12px;
+      border-top: 0; border-left: 3px solid var(--accent);
+    }
+    .ladder.has-state .rung { border-left-color: var(--line); }
+    .ladder.has-state .rung.done, .ladder.has-state .rung.here { border-left-color: var(--accent); }
+    .rung .num { grid-row: span 3; font-size: 24px; }
+    .rung .tag { grid-column: 2; }
+    .res-head { grid-template-columns: 1fr; }
+    .step { padding: 16px; }
+    .step-head { gap: 12px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .bar-fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <p class="eyebrow">自己点検 ・ 6つの軸 ・ 18問 ・ 約5分</p>
+    <h1>AI活用ラダー</h1>
+    <p class="lead">いまのAIの使い方を6つの軸でふり返り、I〜Vのどの段にいるかと、次に何を練習すると一段上がれるかを示します。直近1か月の実際の使い方に近いものを選んでください。</p>
+    <div class="hero-actions">
+      <button type="button" class="btn btn-quiet" id="sample-btn">回答例で結果を見る</button>
+    </div>
+  </header>
+
+  <section id="intro-ladder" aria-labelledby="ladder-h">
+    <h2 id="ladder-h" class="sr-only">5つのレベル</h2>
+    <ol class="ladder" id="ladder-top"></ol>
+  </section>
+
+  <form class="quiz" id="quiz" novalidate>
+    <div id="axes-root" class="axes-list"></div>
+    <div class="bar">
+      <div class="bar-track" aria-hidden="true"><div class="bar-fill" id="bar-fill"></div></div>
+      <span class="bar-count" id="bar-count">0 / 18</span>
+      <button type="submit" class="btn btn-primary" id="submit">結果を見る</button>
+    </div>
+  </form>
+
+  <section class="result" id="result" hidden aria-labelledby="res-h">
+    <p class="sample-flag" id="sample-flag" hidden>回答例（サンプル）の結果です。自分の回答で診断するには「自分の回答で診断する」から設問に答えてください。</p>
+    <h2 id="res-h" class="sr-only">診断結果</h2>
+    <div class="res-head">
+      <div class="level-card">
+        <p class="eyebrow" id="r-eyebrow">現在地</p>
+        <div class="level-mark"><span class="numeral" id="r-num">III</span><span class="lv-name" id="r-name">協働</span></div>
+        <p class="desc" id="r-desc"></p>
+        <p class="total">総合スコア <b id="r-total">0</b>%</p>
+        <p class="gate-note" id="r-gate" hidden></p>
+      </div>
+      <figure class="radar">
+        <svg id="radar" viewBox="0 0 460 300" role="img" aria-label="軸ごとのスコア"></svg>
+        <figcaption>中心 0% ・ 外周 100%（線は25%刻み）</figcaption>
+      </figure>
+    </div>
+    <ol class="ladder has-state" id="ladder-res" aria-label="レベルの位置"></ol>
+
+    <div class="caution" id="r-caution" hidden>
+      <strong>検証が使い方に追いついていません</strong>
+      <p>AIが苦手な課題では、AIを使ったグループの正答率が使わないグループより19ポイント低かったという実験結果があります（Dell'Acqua ほか, 2023）。使う範囲を広げる前に「検証・安全」の練習を優先してください。</p>
+    </div>
+
+    <section class="res-sec" aria-labelledby="axes-h">
+      <h2 id="axes-h">軸ごとのスコア</h2>
+      <ul class="axes" id="r-axes"></ul>
+    </section>
+
+    <section class="res-sec" aria-labelledby="steps-h">
+      <h2 id="steps-h">次の一歩</h2>
+      <p class="intro">スコアが低い軸から順に、その軸のいまの段階に合った練習を3つ選びました。上から1つずつ、1〜2週間ずつ取り組むのが目安です。</p>
+      <ol class="steps" id="r-steps"></ol>
+    </section>
+
+    <section class="res-sec" aria-labelledby="next-h">
+      <h2 id="next-h">次のレベルへの条件</h2>
+      <ul class="checklist" id="r-next"></ul>
+    </section>
+
+    <div class="actions">
+      <button type="button" class="btn btn-primary" id="copy-btn">結果をコピー</button>
+      <button type="button" class="btn" id="edit-btn">回答を見直す</button>
+      <button type="button" class="btn btn-quiet" id="reset-btn">最初からやり直す</button>
+    </div>
+    <textarea class="copy-fallback" id="copy-fallback" hidden readonly aria-label="コピー用テキスト"></textarea>
+  </section>
+
+  <footer class="about" aria-labelledby="about-h">
+    <h2 id="about-h">この診断について</h2>
+    <ul>
+      <li>18問の自己申告にもとづく自己点検用の目安です。妥当性を検証した尺度ではないため、人事評価や順位付けには使わないでください。</li>
+      <li>6つの軸は、AIリテラシーの枠組み（Long &amp; Magerko, CHI 2020）やUNESCOのAIコンピテンシー枠組み（2024）が重視する「理解・活用・評価・倫理・創造」を、日々の業務での行動に置き換えて作りました。</li>
+      <li>レベルは総合スコアで決まり、IVには「仕組み化」50%以上、Vには「創造・展開」67%以上が必要です。</li>
+      <li>回答はこのブラウザの中にだけ保存され、外部には送信されません。</li>
+    </ul>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ROMAN = ["I", "II", "III", "IV", "V"];
+  var TIERS = ["基礎", "応用", "発展"];
+
+  var LEVELS = [
+    { name: "体験", short: "単発の質問や調べもので試している",
+      desc: "AIに触れ始めた段階です。単発の質問が中心で、仕事の流れにはまだ入っていません。",
+      next: ["週に数回、文章の下書き・要約・言い換えにAIを使っている",
+             "依頼に「目的・読み手・形式」を添えている",
+             "AIの回答をそのまま外に出さず、目を通してから使っている"] },
+    { name: "日常活用", short: "文章作成や要約など、日々の作業に使う",
+      desc: "日々の作業でAIを使っています。依頼が短めなので、結果の出来にムラが出やすい段階です。",
+      next: ["背景資料や例を渡し、修正点を具体的に指示している",
+             "重要な内容は出典や一次情報で確認している",
+             "PDFやExcelを渡して、要約・抽出・集計に使っている",
+             "個人情報・機密情報は匿名化してから入力している"] },
+    { name: "協働", short: "文脈を渡し、検証しながら相棒にする",
+      desc: "前提や資料を渡し、確かめながらAIを仕事の相棒にしています。毎回の依頼と確認はまだ手作業です。",
+      next: ["カスタム指示やプロジェクトに、自分の役割と業務の前提を常設している",
+             "定型業務を1つ、スキル・GPTs・Gemなどの指示書にしている",
+             "メールやドライブなど、他のツールと1つ以上連携している（「仕組み化」50%以上が条件）"] },
+    { name: "仕組み化", short: "定型業務を指示書と連携で自動化する",
+      desc: "繰り返す業務を指示書・連携・定期実行で仕組みにしています。自分の外へ広げる段階が次です。",
+      next: ["業務で使うツールやアプリをAIと作り、運用している",
+             "目的と確認ポイントを渡し、複数ステップの作業をまとめて任せている",
+             "テンプレートやツールを共有し、職場の使い方を広げている（「創造・展開」67%以上が条件）"] },
+    { name: "変革・展開", short: "ツールと任せ方を設計し、組織に広げる",
+      desc: "ツールや任せ方を自分で設計し、周りの働き方まで変えています。効果と安全性を保ち続けることが課題です。",
+      next: ["削減時間や品質など、効果を数字で振り返っている",
+             "利用ルールと検証手順を定期的に見直している",
+             "次の担い手を育て、自分がいなくても回る状態にしている"] }
+  ];
+
+  var AXES = [
+    { key: "habit", name: "習慣化", sub: "どれだけ日常の仕事に入っているか" },
+    { key: "prompt", name: "指示設計", sub: "目的や前提を伝え、対話で磨く力" },
+    { key: "verify", name: "検証・安全", sub: "誤りを見抜き、情報を守る力" },
+    { key: "research", name: "調査・分析", sub: "資料・文献・データを扱う力" },
+    { key: "system", name: "仕組み化", sub: "前提の常設、定型業務の手順化、ツール連携" },
+    { key: "build", name: "創造・展開", sub: "ツールを作り、任せ、周りに広げる力" }
+  ];
+  // 同点のときに優先する順（安全に関わる軸を先に）
+  var PRIORITY = ["verify", "prompt", "habit", "research", "system", "build"];
+
+  var QUESTIONS = [
+    { axis: "habit", text: "AIを使う頻度は？", opts: [
+      "ほとんど使っていない（月に数回以下）",
+      "週に1〜2回",
+      "ほぼ毎日",
+      "1日に何度も。仕事の流れに組み込まれている"] },
+    { axis: "habit", text: "AIを使っている業務の幅は？", opts: [
+      "ちょっとした調べものや雑談程度",
+      "文章の下書きや要約など、1〜2種類の作業",
+      "文書作成・要約・企画・分析など、複数の業務",
+      "新しい仕事は「まずAIでどこまでできるか」から考える"] },
+    { axis: "habit", text: "新しいAI機能やツールへの接し方は？", opts: [
+      "特に追っていない",
+      "話題になったものを時々試す",
+      "定期的に試し、使えるものは取り入れている",
+      "試した結果を比べて記録し、用途ごとの使い分けを決めている"] },
+
+    { axis: "prompt", text: "AIに依頼するとき、どこまで伝えていますか？", opts: [
+      "一言で聞くことが多い（例：「〇〇について教えて」）",
+      "やってほしいことは具体的に書く",
+      "目的・読み手・前提条件・出力形式まで伝える",
+      "背景資料や良い例・悪い例も渡し、判断基準まで共有する"] },
+    { axis: "prompt", text: "最初の回答がイマイチだったときは？", opts: [
+      "あきらめるか、自分でやり直す",
+      "もう一度聞き直す・作り直してもらう",
+      "どこがズレているかを具体的に指摘して直させる",
+      "ズレの原因（情報不足・指示のあいまいさ）を考え、依頼文そのものを改善する"] },
+    { axis: "prompt", text: "繰り返し使う依頼文（プロンプト）は？", opts: [
+      "毎回その場で書く",
+      "うまくいったものを時々メモしている",
+      "テンプレートとして保存し、使い回している",
+      "テンプレートを改良し続け、他の人も使える形にしている"] },
+
+    { axis: "verify", text: "AIの回答の事実確認は？", opts: [
+      "基本的にそのまま使う",
+      "違和感があるときだけ確認する",
+      "重要な内容は一次情報や出典で確認する",
+      "出典を求めて原典まで当たるのが習慣。確認の深さを用途のリスクで決めている"] },
+    { axis: "verify", text: "個人情報や機密情報（患者・利用者・顧客・社内情報など）の扱いは？", opts: [
+      "あまり意識していない",
+      "なんとなく入力を避けている",
+      "所属先のルールを把握し、匿名化・マスキングしてから使う",
+      "ルール作りや周囲への注意喚起にも関わっている"] },
+    { axis: "verify", text: "AIの得意・不得意（もっともらしい誤り、最新情報、計算など）の理解は？", opts: [
+      "あまり考えたことがない",
+      "間違えることがある、とは知っている",
+      "間違えやすい場面を知っていて、使い方を変えている",
+      "不得意な部分は検索・コード実行・ツール連携で補うように使っている"] },
+
+    { axis: "research", text: "ファイル（PDF・Excel・画像など）をAIに渡して使っていますか？", opts: [
+      "使ったことがない",
+      "試したことはある",
+      "資料の要約・比較・抽出によく使う",
+      "複数の資料を横断した分析や、表・グラフへの変換まで任せている"] },
+    { axis: "research", text: "調べもの・文献調査でのAIの使い方は？", opts: [
+      "検索エンジンだけを使う",
+      "AIに質問して答えを得る",
+      "Web検索や出典つき回答の機能を使い、情報源を確認している",
+      "論文データベースなどと連携し、根拠の質（研究デザインなど）まで整理させている"] },
+    { axis: "research", text: "数値データ（アンケート・実績・記録など）の分析は？", opts: [
+      "AIでは扱っていない",
+      "簡単な計算やグラフの作り方を相談する",
+      "データを渡して集計・可視化させている",
+      "分析方針から検討させ、結果の解釈や限界まで一緒に議論している"] },
+
+    { axis: "system", text: "カスタム指示やプロジェクト機能（前提の常設）の活用は？", opts: [
+      "知らない・使っていない",
+      "設定したことはある",
+      "自分の役割・好み・業務の前提を設定して使っている",
+      "業務ごとにプロジェクトや参考資料を分け、定期的に見直している"] },
+    { axis: "system", text: "定型業務の指示書化（スキル・GPTs・Gem など）は？", opts: [
+      "作ったことがない",
+      "他の人が作ったものを使っている",
+      "自分の定型業務用に作って使っている",
+      "複数作って改善を重ね、他の人にも使ってもらっている"] },
+    { axis: "system", text: "他のツールとの連携（メール・カレンダー・ドライブ・Notion など）や自動化は？", opts: [
+      "していない",
+      "連携できることは知っている",
+      "いくつか連携し、AIから直接読み書きしている",
+      "定期実行やきっかけの設定で、指示しなくても動く流れを作っている"] },
+
+    { axis: "build", text: "AIを使ってツールやアプリを作ったことは？", opts: [
+      "ない",
+      "簡単なもの（計算シート・1枚のページなど）を試した",
+      "業務で実際に使うツール・アプリを作った",
+      "作ったものを保守・改善し、周りの人も使っている"] },
+    { axis: "build", text: "複数ステップの作業をまとめてAIに任せることは？", opts: [
+      "していない",
+      "一問一答で、段階ごとに自分で進めている",
+      "目的を渡して、調査→作成→見直しまでまとめて任せることがある",
+      "任せる範囲と確認ポイントを決め、自分はレビューする側に回っている"] },
+    { axis: "build", text: "周りへのAI活用の共有・展開は？", opts: [
+      "特にしていない",
+      "聞かれたら教える",
+      "使い方やテンプレートを自分から共有している",
+      "勉強会・ガイドライン作り・導入推進など、組織として広げている"] }
+  ];
+
+  var RECS = {
+    habit: [
+      { title: "「毎日1回、仕事でAIに頼む」を2週間続ける",
+        steps: ["今日の仕事から「書く・まとめる」作業を1つ選び、下書きをAIに頼む",
+                "使った作業と、短縮できた時間を1行でメモする",
+                "2週間後にメモを見返し、効果が大きかった作業を3つ残す"],
+        done: "10営業日のうち8日以上、業務でAIを使えた" },
+      { title: "業務を棚卸しして「AIに任せられる作業」を見つける",
+        steps: ["1週間分の業務を書き出してAIに渡し、「短縮できそうな順に、理由と使い方を表にして」と頼む",
+                "上位3つを実際に試す",
+                "効果があったものを、毎週の定番作業に組み込む"],
+        done: "AIを使うのが当たり前になった業務が5つ以上ある" },
+      { title: "AIの使い分け表をつくる",
+        steps: ["同じ課題を2〜3種類のAIや機能（通常の対話・検索つき・ファイル分析）で解かせて比べる",
+                "「どの用途に何を使うか」を1枚にまとめる",
+                "月に1回、新しい機能を試して表を更新する"],
+        done: "自分用の使い分け表があり、迷わず選べる" }
+    ],
+    prompt: [
+      { title: "依頼に「目的・読み手・形式」の3点を足す",
+        steps: ["依頼文に「目的：」「読み手：」「形式：」を必ず書く（例：目的＝新人向け研修、読み手＝入職1年目、形式＝A4一枚の箇条書き）",
+                "結果がずれたら「この依頼で足りなかった情報は何？」とAIに聞く",
+                "うまくいった依頼文をメモに保存する"],
+        done: "3点を書かずに依頼することがなくなった" },
+      { title: "「お手本」と「評価基準」を渡して一度で近づける",
+        steps: ["過去の良い成果物を、お手本として貼りつける",
+                "「この基準で自己チェックしてから出して」と評価基準を書き添える",
+                "「足りない情報があれば、作る前に質問して」と加え、AIに確認させる"],
+        done: "修正のやりとりが2往復以内で済むようになった" },
+      { title: "依頼文を部品に分けて育てる",
+        steps: ["よく使う依頼文を「役割・前提・手順・出力形式」に分けて整理する",
+                "同じ入力で改良前と改良後を比べ、良くなった点だけ残す",
+                "同僚に使ってもらい、誰が使っても同じ品質になるか確かめる"],
+        done: "他の人が使っても同じ品質が出るテンプレートがある" }
+    ],
+    verify: [
+      { title: "「数字・固有名詞・文献」だけは必ず確かめる",
+        steps: ["回答中の数値・人名・制度名・文献に印をつけ、公式の情報源で確認する",
+                "「この回答で不確かな点はどこ？」とAI自身に聞く",
+                "氏名・ID・生年月日などは記号に置き換えてから入力する"],
+        done: "確認せずに外へ出す文書がなくなった" },
+      { title: "出典つきで答えさせ、原典まで当たる",
+        steps: ["「根拠となる出典（著者・年・URLかDOI）を示して」と指示する",
+                "出典が実在し、内容が回答と一致するかを原典で確かめる（実在しない文献が示されることがある）",
+                "用途のリスクで確認の深さを決めておく（例：お知らせ＜研修資料＜臨床や経営の判断）"],
+        done: "重要な内容は原典で確かめるのが習慣になった" },
+      { title: "検証を作業の流れに組み込む",
+        steps: ["別の会話や別のAIに「批判的にレビューして」と頼み、二重チェックする",
+                "計算はコード実行、最新情報は検索と、不得意な部分をツールで補う",
+                "所属先のAI利用ルールの作成や見直しに参加する"],
+        done: "検証の手順がチェックリストやテンプレートになっている" }
+    ],
+    research: [
+      { title: "手元の資料を1つ、AIに読ませてみる",
+        steps: ["会議資料やマニュアルのPDFを渡し「要点を5つ、読み手ごとの注意点つきで」と頼む",
+                "原文と照らし合わせ、抜けや誤りがないか確かめる",
+                "Excelの表を渡し「傾向を3つ挙げて、根拠の数字も示して」と頼む"],
+        done: "資料の要約や抽出をAIで行うのが普通になった" },
+      { title: "出典つきの調査と、データの図表化",
+        steps: ["Web検索や論文検索（PubMedなど）とつながる機能で調べ、出典リストも出させる",
+                "研究デザイン（ランダム化比較試験・観察研究など）と根拠の強さを表に整理させる",
+                "集計データを渡し、グラフとその読み取り方をセットで出させる"],
+        done: "出典リストと図表つきの報告を短時間で作れる" },
+      { title: "分析の設計からAIと議論する",
+        steps: ["データを渡す前に「この問いに答えるには、どんな分析が必要か」を相談する",
+                "結果について、交絡・偏り・限界をAIに指摘させる",
+                "文献レビュー支援ツールで、検索式づくりからデータ抽出まで試す"],
+        done: "分析計画と限界の記述まで含めて仕上げられる" }
+    ],
+    system: [
+      { title: "カスタム指示に「自分の前提」を書く",
+        steps: ["職種・担当業務・よく作る文書・好みの文体を設定に書く（例：「看護師。院内研修の資料を担当。敬体で、根拠は出典つきで」）",
+                "1週間使い、毎回説明していた前提を書き足す",
+                "業務ごとにプロジェクト（会話と資料のまとまり）を分ける"],
+        done: "毎回同じ説明をしなくてよくなった" },
+      { title: "定型業務を1つ、指示書にする",
+        steps: ["月に何度もある作業（議事録・報告書・勤務表・研修案内など）を1つ選ぶ",
+                "手順・判断基準・出力形式・お手本を1つの指示書にまとめ、スキル・GPTs・Gemなどに登録する",
+                "3回使い、うまくいかなかった点を指示書に書き足す"],
+        done: "その作業が短い依頼1つで終わる" },
+      { title: "連携と定期実行で「頼まなくても動く」流れを作る",
+        steps: ["メール・カレンダー・ドライブ・Notionなどを連携し、AIが直接読み書きできるようにする",
+                "朝のまとめや週次レポートなどを定期実行に設定する",
+                "失敗に気づく方法と、人が必ず目を通す箇所を決めておく"],
+        done: "自動で回っている流れが1つ以上ある" }
+    ],
+    build: [
+      { title: "AIと一緒に小さなツールを1つ作る",
+        steps: ["毎回手で計算・転記している作業を1つ選ぶ",
+                "「〇〇を入力すると△△が出る、1ページのツールを作って」とAIに頼む",
+                "実際の業務で1週間使い、不便な点を直してもらう"],
+        done: "自作のツールを業務で使っている" },
+      { title: "作業をまとめて任せ、レビューする側に回る",
+        steps: ["目的・完了の条件・確認してほしい点を最初に渡し、調べる→作る→見直すまで一度に任せる",
+                "成果物をチェックリストでレビューし、指摘を返す",
+                "作ったコードやファイルはGitHubなどで版を管理し、変更の履歴を残す"],
+        done: "半日かかっていた作業を、依頼と確認だけで終えられる" },
+      { title: "周りに広げ、仕組みとして根づかせる",
+        steps: ["自分のテンプレート・指示書・ツールを、使い方の説明つきで共有する",
+                "15分のミニ勉強会で、実例と「やってはいけないこと」を伝える",
+                "利用ルールと効果の測り方（削減時間など）を職場の仕組みにする"],
+        done: "自分がいなくても回る使い方が職場にある" }
+    ]
+  };
+
+  // 回答例：レベルIII相当・検証が弱いプロフィール
+  var SAMPLE = [2, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1];
+
+  var STORE_KEY = "ai-ladder-v1";
+  var N = QUESTIONS.length;
+  var answers = new Array(N).fill(null);
+
+  var $ = function (id) { return document.getElementById(id); };
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var axisByKey = {};
+  AXES.forEach(function (a) { axisByKey[a.key] = a; });
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      var arr = JSON.parse(raw);
+      if (Array.isArray(arr) && arr.length === N) {
+        answers = arr.map(function (v) { return (v === 0 || v === 1 || v === 2 || v === 3) ? v : null; });
+      }
+    } catch (e) { /* 保存領域が使えない環境では何もしない */ }
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(answers)); } catch (e) { /* 無視 */ }
+  }
+
+  function renderLadder(el, current) {
+    el.innerHTML = LEVELS.map(function (lv, i) {
+      var cls = "rung";
+      if (current != null) cls += i < current ? " done" : i === current ? " here" : " ahead";
+      return '<li class="' + cls + '" style="--i:' + i + ";--o:" + (4 - i) + '">' +
+        '<span class="num">' + ROMAN[i] + "</span>" +
+        '<span class="nm">' + lv.name + "</span>" +
+        '<span class="ds">' + lv.short + "</span>" +
+        '<span class="tag">現在地</span></li>';
+    }).join("");
+  }
+
+  function renderQuiz() {
+    var root = $("axes-root");
+    var html = "";
+    AXES.forEach(function (a, ai) {
+      html += '<section class="axis" aria-labelledby="ax-' + a.key + '">' +
+        '<div class="axis-head"><p class="eyebrow">軸 ' + (ai + 1) + " / " + AXES.length + "</p>" +
+        '<h2 id="ax-' + a.key + '">' + a.name + "</h2>" +
+        '<p class="sub">' + a.sub + "</p></div>";
+      QUESTIONS.forEach(function (q, qi) {
+        if (q.axis !== a.key) return;
+        var name = "q" + (qi + 1);
+        html += '<fieldset class="q" id="' + name + '"><legend><span class="qno">Q' + (qi + 1) + "</span>" + q.text +
+          '<span class="missing-tag">未回答</span></legend><div class="opts">';
+        q.opts.forEach(function (o, oi) {
+          var id = name + "-" + oi;
+          html += '<label class="opt" for="' + id + '"><input type="radio" name="' + name + '" id="' + id + '" value="' + oi + '"' +
+            (answers[qi] === oi ? " checked" : "") + "><span>" + o + "</span></label>";
+        });
+        html += "</div></fieldset>";
+      });
+      html += "</section>";
+    });
+    root.innerHTML = html;
+  }
+
+  function answeredCount() {
+    return answers.filter(function (v) { return v !== null; }).length;
+  }
+  function updateBar() {
+    var c = answeredCount();
+    $("bar-fill").style.width = (c / N * 100) + "%";
+    $("bar-count").textContent = c + " / " + N;
+    $("submit").textContent = c === N ? "結果を見る" : "結果を見る（残り" + (N - c) + "問）";
+  }
+
+  function compute(ans) {
+    var pts = {};
+    AXES.forEach(function (a) { pts[a.key] = 0; });
+    var sum = 0;
+    ans.forEach(function (v, i) { pts[QUESTIONS[i].axis] += v; sum += v; });
+    var pct = {};
+    AXES.forEach(function (a) {
+      var max = QUESTIONS.filter(function (q) { return q.axis === a.key; }).length * 3;
+      pct[a.key] = Math.round(pts[a.key] / max * 100);
+    });
+    var total = Math.round(sum / (N * 3) * 100);
+    var base = total < 25 ? 0 : total < 45 ? 1 : total < 65 ? 2 : total < 85 ? 3 : 4;
+    var lv = base, reasons = [];
+    if (lv === 4 && pct.build < 67) { reasons.push("「創造・展開」が67%未満"); lv = 3; }
+    if (lv === 3 && pct.system < 50) { reasons.push("「仕組み化」が50%未満"); lv = 2; }
+
+    var order = AXES.map(function (a) { return a.key; }).sort(function (x, y) {
+      return (pct[x] - pct[y]) || (PRIORITY.indexOf(x) - PRIORITY.indexOf(y));
+    });
+    var picks = order.slice(0, 3);
+    if (pct.verify < 45 && picks.indexOf("verify") === -1) picks[2] = "verify";
+    picks.sort(function (x, y) { return (pct[x] - pct[y]) || (PRIORITY.indexOf(x) - PRIORITY.indexOf(y)); });
+
+    return { pct: pct, total: total, base: base, level: lv, reasons: reasons, picks: picks,
+             caution: pct.verify < 45 && lv >= 2 };
+  }
+
+  function tierOf(p) { return p < 40 ? 0 : p < 75 ? 1 : 2; }
+  function r1(n) { return Math.round(n * 10) / 10; }
+
+  function renderRadar(svg, pct) {
+    var cx = 230, cy = 150, R = 100, LR = 122, n = AXES.length;
+    function pt(i, r) {
+      var a = -Math.PI / 2 + i * 2 * Math.PI / n;
+      return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
+    }
+    function poly(r) {
+      return AXES.map(function (_, i) { var p = pt(i, r); return r1(p[0]) + "," + r1(p[1]); }).join(" ");
+    }
+    var s = "";
+    [25, 50, 75, 100].forEach(function (v) {
+      s += '<polygon class="r-ring' + (v === 100 ? " r-ring-outer" : "") + '" points="' + poly(R * v / 100) + '"/>';
+    });
+    AXES.forEach(function (_, i) {
+      var p = pt(i, R);
+      s += '<line class="r-spoke" x1="' + cx + '" y1="' + cy + '" x2="' + r1(p[0]) + '" y2="' + r1(p[1]) + '"/>';
+    });
+    var data = AXES.map(function (a, i) {
+      var p = pt(i, R * Math.max(pct[a.key], 2) / 100);
+      return r1(p[0]) + "," + r1(p[1]);
+    }).join(" ");
+    s += '<polygon class="r-area" points="' + data + '"/>';
+    AXES.forEach(function (a, i) {
+      var p = pt(i, R * pct[a.key] / 100);
+      s += '<circle class="r-dot" cx="' + r1(p[0]) + '" cy="' + r1(p[1]) + '" r="3.5"/>';
+    });
+    AXES.forEach(function (a, i) {
+      var p = pt(i, LR), dx = p[0] - cx;
+      var anchor = Math.abs(dx) < 1 ? "middle" : dx > 0 ? "start" : "end";
+      var dy = Math.abs(dx) < 1 ? (p[1] < cy ? -4 : 14) : 5;
+      s += '<text class="r-label" x="' + r1(p[0]) + '" y="' + r1(p[1] + dy) + '" text-anchor="' + anchor + '">' + a.name +
+        '<tspan class="r-val" dx="6">' + pct[a.key] + "%</tspan></text>";
+    });
+    svg.innerHTML = s;
+    svg.setAttribute("aria-label", "軸ごとのスコア：" + AXES.map(function (a) { return a.name + " " + pct[a.key] + "%"; }).join("、"));
+  }
+
+  var lastResult = null;
+
+  function renderResult(ans, isSample) {
+    var r = compute(ans);
+    lastResult = r;
+    var lv = LEVELS[r.level];
+
+    $("sample-flag").hidden = !isSample;
+    $("r-eyebrow").textContent = isSample ? "回答例の現在地" : "あなたの現在地";
+    $("r-num").textContent = ROMAN[r.level];
+    $("r-name").textContent = lv.name;
+    $("r-desc").textContent = lv.desc;
+    $("r-total").textContent = r.total;
+    var gate = $("r-gate");
+    if (r.reasons.length) {
+      gate.hidden = false;
+      gate.textContent = "総合スコアはレベル" + ROMAN[r.base] + "の水準ですが、" + r.reasons.join("、") + "のため、レベル" + ROMAN[r.level] + "と判定しました。";
+    } else {
+      gate.hidden = true;
+    }
+    renderRadar($("radar"), r.pct);
+    renderLadder($("ladder-res"), r.level);
+    $("r-caution").hidden = !r.caution;
+
+    $("r-axes").innerHTML = AXES.map(function (a) {
+      var p = r.pct[a.key], t = tierOf(p);
+      return '<li><div class="ax-head"><span class="ax-name">' + a.name + '</span><span class="chip t' + t + '">' + TIERS[t] +
+        '</span><span class="ax-pct">' + p + '%</span></div>' +
+        '<div class="track" aria-hidden="true"><div class="fill t' + t + '" style="width:' + p + '%"></div></div>' +
+        '<p class="ax-sub">' + a.sub + "</p></li>";
+    }).join("");
+
+    $("r-steps").innerHTML = r.picks.map(function (k, i) {
+      var a = axisByKey[k], p = r.pct[k], t = tierOf(p), rec = RECS[k][t];
+      return '<li class="step"><div class="step-head"><span class="step-no" aria-hidden="true">' + (i + 1) + "</span>" +
+        '<div><p class="step-axis">' + a.name + " ・ " + TIERS[t] + "の練習 ・ いま " + p + "%</p>" +
+        "<h3>" + rec.title + "</h3></div></div>" +
+        '<ol class="step-list">' + rec.steps.map(function (s) { return "<li>" + s + "</li>"; }).join("") + "</ol>" +
+        '<p class="step-done"><span>できたの目安</span>' + rec.done + "</p></li>";
+    }).join("");
+
+    $("next-h").textContent = r.level < 4
+      ? "レベル" + ROMAN[r.level + 1] + "「" + LEVELS[r.level + 1].name + "」への条件"
+      : "レベルVを保つために";
+    $("r-next").innerHTML = lv.next.map(function (c) { return "<li><span>" + c + "</span></li>"; }).join("");
+
+    $("copy-btn").hidden = !!isSample;
+    $("reset-btn").hidden = !!isSample;
+    $("edit-btn").textContent = isSample ? "自分の回答で診断する" : "回答を見直す";
+    $("copy-fallback").hidden = true;
+    resetConfirm();
+  }
+
+  function showResult(ans, isSample) {
+    renderResult(ans, isSample);
+    $("quiz").hidden = true;
+    $("intro-ladder").hidden = true;
+    $("sample-btn").hidden = true;
+    $("result").hidden = false;
+    window.scrollTo({ top: $("result").getBoundingClientRect().top + window.scrollY - 16, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+  function showQuiz(scrollTarget) {
+    $("result").hidden = true;
+    $("quiz").hidden = false;
+    $("intro-ladder").hidden = false;
+    $("sample-btn").hidden = false;
+    var target = scrollTarget || $("quiz");
+    window.scrollTo({ top: target.getBoundingClientRect().top + window.scrollY - 16, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+
+  function buildText() {
+    var r = lastResult;
+    var lines = [];
+    lines.push("【AI活用ラダー診断】");
+    lines.push("レベル：" + ROMAN[r.level] + "「" + LEVELS[r.level].name + "」（総合 " + r.total + "%）");
+    lines.push("軸ごと：" + AXES.map(function (a) { return a.name + " " + r.pct[a.key] + "%"; }).join(" / "));
+    lines.push("優先して伸ばす軸：" + r.picks.map(function (k) { return axisByKey[k].name + "（" + TIERS[tierOf(r.pct[k])] + "）"; }).join("、"));
+    lines.push("回答：" + answers.map(function (v, i) { return "Q" + (i + 1) + "=" + v; }).join(" "));
+    lines.push("");
+    lines.push("この診断結果をもとに、私の仕事（ここに職種と主な業務を書く）に合わせた4週間の練習プランを作ってください。各週、具体的な依頼文の例と、できたかどうかの確かめ方も入れてください。");
+    return lines.join("\n");
+  }
+
+  var confirmTimer = null;
+  function resetConfirm() {
+    clearTimeout(confirmTimer);
+    var b = $("reset-btn");
+    b.dataset.armed = "";
+    b.textContent = "最初からやり直す";
+    b.classList.remove("btn-warn");
+  }
+
+  // ---------- events ----------
+  $("quiz").addEventListener("change", function (e) {
+    var t = e.target;
+    if (!t || t.type !== "radio") return;
+    var qi = parseInt(t.name.slice(1), 10) - 1;
+    answers[qi] = parseInt(t.value, 10);
+    var fs = $(t.name);
+    if (fs) fs.classList.remove("missing");
+    save();
+    updateBar();
+  });
+
+  $("quiz").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var firstMissing = null;
+    answers.forEach(function (v, i) {
+      var fs = $("q" + (i + 1));
+      if (v === null) { fs.classList.add("missing"); if (!firstMissing) firstMissing = fs; }
+      else fs.classList.remove("missing");
+    });
+    if (firstMissing) {
+      window.scrollTo({ top: firstMissing.getBoundingClientRect().top + window.scrollY - 24, behavior: reduceMotion ? "auto" : "smooth" });
+      var input = firstMissing.querySelector("input");
+      if (input) input.focus({ preventScroll: true });
+      return;
+    }
+    showResult(answers.slice(), false);
+  });
+
+  $("sample-btn").addEventListener("click", function () { showResult(SAMPLE, true); });
+  $("edit-btn").addEventListener("click", function () { showQuiz(); });
+
+  $("copy-btn").addEventListener("click", function () {
+    var btn = this, text = buildText(), fb = $("copy-fallback");
+    function done() {
+      btn.textContent = "コピーしました";
+      setTimeout(function () { btn.textContent = "結果をコピー"; }, 2000);
+    }
+    function fallback() {
+      fb.hidden = false; fb.value = text; fb.focus(); fb.select();
+      btn.textContent = "下の枠からコピーしてください";
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback);
+      else fallback();
+    } catch (e) { fallback(); }
+  });
+
+  $("reset-btn").addEventListener("click", function () {
+    var b = this;
+    if (!b.dataset.armed) {
+      b.dataset.armed = "1";
+      b.textContent = "もう一度押すと回答を消去します";
+      b.classList.add("btn-warn");
+      confirmTimer = setTimeout(resetConfirm, 4000);
+      return;
+    }
+    resetConfirm();
+    answers = new Array(N).fill(null);
+    save();
+    renderQuiz();
+    updateBar();
+    showQuiz(document.querySelector(".hero"));
+  });
+
+  // ---------- init ----------
+  load();
+  renderLadder($("ladder-top"), null);
+  renderQuiz();
+  updateBar();
+})();
+</script>
+</body>
+</html>
