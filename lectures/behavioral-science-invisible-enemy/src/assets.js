@@ -90,7 +90,7 @@ async function build() {
     "FaClipboardList", "FaBullseye", "FaSyncAlt", "FaEnvelopeOpenText",
     "FaUserMd", "FaUserNurse", "FaPills", "FaFlask", "FaWalking", "FaBroom",
     "FaBuilding", "FaClock", "FaNotEqual", "FaArrowRight",
-    "FaYenSign", "FaBook", "FaCalendarCheck", "FaSms", "FaShoePrints", "FaThumbsUp", "FaCheckSquare",
+    "FaYenSign", "FaBook", "FaBrain", "FaHourglassHalf", "FaChartLine", "FaHandPaper", "FaHandsWash", "FaLightbulb", "FaCalendarCheck", "FaSms", "FaShoePrints", "FaThumbsUp", "FaCheckSquare",
   ];
   out.icon = {};
   for (const n of names) {
